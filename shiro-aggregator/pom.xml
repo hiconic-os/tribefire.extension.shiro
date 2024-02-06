@@ -24,7 +24,7 @@ You should have received a copy of the GNU Lesser General Public License along w
         </license>
     </licenses>
     <artifactId>shiro-aggregator</artifactId>
-    <version>5.0.3</version>
+    <version>5.0.4</version>
     <dependencies>
         <dependency>
             <groupId>tribefire.extension.shiro</groupId>
