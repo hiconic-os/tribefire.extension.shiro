@@ -86,4 +86,6 @@ public interface ShiroTemplateContextBuilder extends TemplateContextBuilder<Shir
 
 	ShiroTemplateContextBuilder setObfuscateLogOutput(boolean obfuscateLogOutput);
 
+	ShiroTemplateContextBuilder setFixedUserRolesForNewUsers(Set<String> fixedUserRolesForNewUsers);
+
 }

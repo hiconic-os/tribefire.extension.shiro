@@ -97,6 +97,7 @@ public class ShiroInitializerSpace extends AbstractInitializerSpace implements S
 			.setAcceptList(ShiroInitializationTools.parseCollection(acceptListString))
 			.setBlockList(ShiroInitializationTools.parseCollection(blockListString))
 			.setCreateUsers(properties.SHIRO_LOGIN_CREATEUSERS())
+			.setFixedUserRolesForNewUsers(properties.SHIRO_LOGIN_NEWUSERFIXEDROLES())
 			.setShowStandardLoginForm(properties.SHIRO_SHOW_STANDARD_LOGIN_FORM())
 			.setShowTextLinks(properties.SHIRO_SHOW_TEXT_LINKS())
 			.setAddSessionParameterOnRedirect(properties.SHIRO_ADD_SESSION_PARAMETER_ON_REDIRECT());

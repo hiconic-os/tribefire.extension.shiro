@@ -12,6 +12,7 @@
 package tribefire.extension.shiro.initializer.wire.contract;
 
 import java.util.List;
+import java.util.Set;
 
 import com.braintribe.model.shiro.deployment.FieldEncoding;
 import com.braintribe.wire.api.annotation.Decrypt;
@@ -132,6 +133,7 @@ public interface ShiroRuntimePropertiesContract extends PropertyLookupContract {
 
 	@Default("true")
 	boolean SHIRO_LOGIN_CREATEUSERS();
+	Set<String> SHIRO_LOGIN_NEWUSERFIXEDROLES();
 
 	String SHIRO_PUBLIC_SERVICES_URL(String defaultValue);
 	String SHIRO_CALLBACK_URL(String defaultValue);

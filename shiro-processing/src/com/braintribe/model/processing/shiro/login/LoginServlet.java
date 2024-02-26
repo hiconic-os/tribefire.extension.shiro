@@ -71,7 +71,6 @@ import com.braintribe.model.processing.query.fluent.EntityQueryBuilder;
 import com.braintribe.model.processing.securityservice.api.exceptions.AuthenticationException;
 import com.braintribe.model.processing.service.api.aspect.RequestedEndpointAspect;
 import com.braintribe.model.processing.service.api.aspect.RequestorAddressAspect;
-import com.braintribe.model.processing.service.common.context.UserSessionAspect;
 import com.braintribe.model.processing.session.api.persistence.PersistenceGmSession;
 import com.braintribe.model.processing.session.api.persistence.PersistenceGmSessionFactory;
 import com.braintribe.model.processing.session.api.persistence.SessionFactoryBasedSessionProvider;
@@ -141,7 +140,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	private String servicesUrl = "/tribefire-services";
 	private boolean addSessionUrlParameter = false;
 
-	private PersistenceGmSessionFactory sessionFactory;
+	private PersistenceGmSessionFactory systemSessionFactory;
 	private ShiroAuthenticationConfiguration configuration;
 	private String externalId;
 
@@ -169,6 +168,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	private final ConcurrentHashMap<String, String> iconContentCache = new ConcurrentHashMap<>();
 
 	private Boolean obfuscateLogOutput = Boolean.TRUE;
+
+	private ClassLoader moduleClassLoader;
 
 	@Override
 	public void init() throws ServletException {
@@ -1008,8 +1009,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		UserNameIdentification identification = UserNameIdentification.T.create();
 		GrantedCredentials credentials = GrantedCredentials.T.create();
 
-		UserSession trustedSession = AttributeContexts.peek().findOrNull(UserSessionAspect.class);
-		String existingSessionId = trustedSession.getSessionId();
+		PersistenceGmSession cortexSession = systemSessionFactory.newSession(TribefireConstants.ACCESS_CORTEX);
+		String existingSessionId = cortexSession.getSessionAuthorization().getSessionId();
 
 		ExistingSessionCredentials existing = ExistingSessionCredentials.T.create();
 		existing.setReuseSession(false);
@@ -1079,7 +1080,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		Map<String, String> authImageUrls = new LinkedHashMap<>();
 		Map<String, String> authEmbeddedImages = new LinkedHashMap<>();
 		String tfs = TribefireRuntime.getPublicServicesUrl();
-		PersistenceGmSession cortexSession = sessionFactory.newSession(TribefireConstants.ACCESS_CORTEX);
+		PersistenceGmSession cortexSession = systemSessionFactory.newSession(TribefireConstants.ACCESS_CORTEX);
 		for (ShiroClient client : configuration.getClients()) {
 			String clientName = client.getName();
 			String authUrl = tfs + "/component/" + pathIdentifier + "/auth/" + clientName.toLowerCase();
@@ -1171,11 +1172,11 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	private PersistenceGmSession authSession() {
 		SessionFactoryBasedSessionProvider bean = new SessionFactoryBasedSessionProvider();
 		bean.setAccessId(authAccessIdSupplier.get());
-		bean.setPersistenceGmSessionFactory(this.sessionFactory);
+		bean.setPersistenceGmSessionFactory(this.systemSessionFactory);
 		return bean.get();
 	}
 
-	private static Map<String, Object> getAttributeMap(UserProfile cp) {
+	private Map<String, Object> getAttributeMap(UserProfile cp) {
 		Map<String, Object> map = new LinkedHashMap<>(cp.getAttributes());
 		map.putIfAbsent("id", cp.getId());
 		map.putIfAbsent("linkedId", cp.getLinkedId());
@@ -1202,6 +1203,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 					if (i > 0 && StringTools.countOccurrences(token, ".") == 2) {
 						String withoutSignature = token.substring(0, i + 1);
 
+						ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+						Thread.currentThread().setContextClassLoader(moduleClassLoader);
 						try {
 							Jwt jwt = Jwts.parserBuilder().build().parse(withoutSignature);
 							Claims body = (Claims) jwt.getBody();
@@ -1218,6 +1221,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 							logger.warn("Not accepting an expired token: " + key + ": " + token);
 						} catch (Exception e) {
 							logger.debug("Error while parsing potential JWT token: " + key + ": " + token, e);
+						} finally {
+							Thread.currentThread().setContextClassLoader(oldClassLoader);
 						}
 					}
 				}
@@ -1254,8 +1259,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	@Configurable
 	@Required
-	public void setSessionFactory(PersistenceGmSessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
+	public void setSystemSessionFactory(PersistenceGmSessionFactory sessionFactory) {
+		this.systemSessionFactory = sessionFactory;
 	}
 	@Configurable
 	public void setCreateUsers(boolean createUsers) {
@@ -1330,6 +1335,11 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		if (obfuscateLogOutput != null) {
 			this.obfuscateLogOutput = obfuscateLogOutput;
 		}
+	}
+	@Configurable
+	@Required
+	public void setModuleClassLoader(ClassLoader classLoader) {
+		this.moduleClassLoader = classLoader;
 	}
 
 }

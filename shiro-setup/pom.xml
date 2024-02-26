@@ -42,5 +42,11 @@ You should have received a copy of the GNU Lesser General Public License along w
             <type>man</type>
             <?tag asset?>
         </dependency>
+		<dependency>
+			<groupId>tribefire.extension.jdbcdriver</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${V.tribefire.extension.jdbcdriver}</version>
+            <?tag asset?>
+		</dependency>
     </dependencies>
 </project>

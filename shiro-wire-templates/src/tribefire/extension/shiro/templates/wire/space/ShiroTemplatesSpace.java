@@ -310,7 +310,7 @@ public class ShiroTemplatesSpace implements WireSpace, ShiroTemplatesContract {
 		FixedNewUserRoleProvider bean = context.create(FixedNewUserRoleProvider.T, InstanceConfiguration.currentInstance());
 		bean.setName("Fixed Roles for New Users Provider");
 		bean.setModule(context.getModule());
-		bean.getRoles().add("tf-admin");
+		bean.getRoles().addAll(context.getFixedUserRolesForNewUsers());
 		return bean;
 	}
 

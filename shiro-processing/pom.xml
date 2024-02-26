@@ -188,6 +188,11 @@ You should have received a copy of the GNU Lesser General Public License along w
             <artifactId>jjwt-impl</artifactId>
             <version>${V.io.jsonwebtoken}</version>
         </dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>${V.io.jsonwebtoken}</version>
+		</dependency>        
         <dependency>
             <groupId>org.apache.shiro</groupId>
             <artifactId>shiro-web</artifactId>

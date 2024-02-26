@@ -95,6 +95,8 @@ public class ShiroTemplateContextImpl extends TemplateContextImpl<ShiroTemplateC
 
 	private boolean obfuscateLogOutput = true;
 
+	private Set<String> fixedUserRolesForNewUsers = Set.of("tf-internal");
+
 	@Override
 	public boolean getGoogleEnabled() {
 		return googleEnabled;
@@ -610,6 +612,17 @@ public class ShiroTemplateContextImpl extends TemplateContextImpl<ShiroTemplateC
 	@Override
 	public Boolean getObfuscateLogOutput() {
 		return obfuscateLogOutput;
+	}
+	@Override
+	public ShiroTemplateContextBuilder setFixedUserRolesForNewUsers(Set<String> fixedUserRolesForNewUsers) {
+		if (fixedUserRolesForNewUsers != null) {
+			this.fixedUserRolesForNewUsers = fixedUserRolesForNewUsers;
+		}
+		return this;
+	}
+	@Override
+	public Set<String> getFixedUserRolesForNewUsers() {
+		return fixedUserRolesForNewUsers;
 	}
 
 }

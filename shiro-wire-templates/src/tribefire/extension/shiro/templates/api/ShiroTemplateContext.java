@@ -89,5 +89,6 @@ public interface ShiroTemplateContext extends TemplateContext {
 	boolean getShowTextLinks();
 
 	Boolean getObfuscateLogOutput();
+	Set<String> getFixedUserRolesForNewUsers();
 
 }

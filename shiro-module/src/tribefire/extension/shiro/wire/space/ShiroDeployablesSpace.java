@@ -46,6 +46,7 @@ import com.braintribe.wire.api.space.WireSpace;
 
 import tribefire.module.wire.contract.HttpContract;
 import tribefire.module.wire.contract.MarshallingContract;
+import tribefire.module.wire.contract.ModuleReflectionContract;
 import tribefire.module.wire.contract.RequestProcessingContract;
 import tribefire.module.wire.contract.RequestUserRelatedContract;
 import tribefire.module.wire.contract.ServletsContract;
@@ -76,6 +77,9 @@ public class ShiroDeployablesSpace implements WireSpace {
 
 	@Import
 	private RequestProcessingContract requestProcessing;
+
+	@Import
+	private ModuleReflectionContract module;
 
 	@Override
 	public void onLoaded(WireContextConfiguration configuration) {
@@ -108,7 +112,7 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setServicesUrl(TribefireRuntime.getPublicServicesUrl());
 		bean.setCookieHandler(http.cookieHandler());
 		bean.setRemoteAddressResolver(servlets.remoteAddressResolver());
-		bean.setSessionFactory(tfPlatform.systemUserRelated().sessionFactory());
+		bean.setSystemSessionFactory(tfPlatform.systemUserRelated().sessionFactory());
 		bean.setCreateUsers(deployable.getCreateUsers());
 		bean.setConfiguration(deployable.getConfiguration());
 		bean.setExternalId(deployable.getPathIdentifier());
@@ -135,6 +139,7 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setEvaluator(tfPlatform.systemUserRelated().evaluator());
 		bean.setExternalIconUrlHelper(externalIconUrlHelper());
 		bean.setObfuscateLogOutput(deployable.getObfuscateLogOutput());
+		bean.setModuleClassLoader(module.moduleClassLoader());
 		return bean;
 	}
 
