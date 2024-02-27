@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.braintribe.cfg.Configurable;
 import com.braintribe.cfg.LifecycleAware;
@@ -33,6 +34,8 @@ import com.braintribe.model.processing.session.api.persistence.SessionFactoryBas
 import com.braintribe.model.processing.shiro.ShiroConstants;
 import com.braintribe.model.processing.shiro.bootstrapping.MulticastSessionDao;
 import com.braintribe.model.processing.shiro.util.IdTokenContent;
+import com.braintribe.model.processing.shiro.util.ShiroTools;
+import com.braintribe.model.processing.shiro.util.ShiroTools.TokenContent;
 import com.braintribe.model.query.EntityQuery;
 import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
 import com.braintribe.model.shiro.deployment.ShiroClient;
@@ -52,9 +55,6 @@ import com.braintribe.model.user.User;
 import com.braintribe.utils.lcd.StringTools;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.Jwts;
 
 public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<ShiroRequest, ShiroResult> implements LifecycleAware {
 
@@ -66,6 +66,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	private MulticastSessionDao multicastSessionDao = null;
 	private Supplier<String> authAccessIdSupplier;
 	private PersistenceGmSessionFactory sessionFactory;
+	private ShiroTools shiroTools;
 
 	@Override
 	protected void configureDispatching(DispatchConfiguration<ShiroRequest, ShiroResult> dispatching) {
@@ -93,14 +94,13 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	}
 
 	protected IdTokenContent parseIdToken(String idToken, EnsureUserByIdToken request) {
-		int i = idToken.lastIndexOf('.');
-		String withoutSignature = idToken.substring(0, i + 1);
-		Jwt<Header, Claims> claimsJwt = Jwts.parser().parseClaimsJwt(withoutSignature);
-		Claims body = claimsJwt.getBody();
+		TokenContent tokenWithoutValidation = shiroTools.parseTokenWithoutValidation(idToken, false);
+		Claims body = tokenWithoutValidation.body();
 
 		IdTokenContent result = new IdTokenContent();
 
-		result.audience = body.getAudience();
+		Set<String> audience = body.getAudience();
+		result.audience = audience != null ? audience.stream().collect(Collectors.joining(",")) : null;
 		result.expiration = body.getExpiration();
 		result.issuedAt = body.getIssuedAt();
 		result.issuer = body.getIssuer();
@@ -338,6 +338,11 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	@Required
 	public void setSessionFactory(PersistenceGmSessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
+	}
+	@Configurable
+	@Required
+	public void setShiroTools(ShiroTools shiroTools) {
+		this.shiroTools = shiroTools;
 	}
 
 }

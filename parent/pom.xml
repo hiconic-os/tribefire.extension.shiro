@@ -23,7 +23,7 @@ You should have received a copy of the GNU Lesser General Public License along w
         <V.tribefire.extension.jdbcdriver>[3.0,3.1)</V.tribefire.extension.jdbcdriver>
         <V.com.fasterxml.jackson.core>2.13.3</V.com.fasterxml.jackson.core>
         <V.io.buji>7.0.0</V.io.buji>
-        <V.io.jsonwebtoken>0.11.2</V.io.jsonwebtoken>
+        <V.io.jsonwebtoken>0.12.5</V.io.jsonwebtoken>
         <V.javax.servlet>3.1.0</V.javax.servlet>
         <V.net.sourceforge.nekohtml>1.9.22</V.net.sourceforge.nekohtml>
         <V.org.apache.httpcomponents>4.5.13</V.org.apache.httpcomponents>

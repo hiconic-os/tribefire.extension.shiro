@@ -28,6 +28,7 @@ import com.braintribe.model.processing.shiro.service.HealthCheckProcessor;
 import com.braintribe.model.processing.shiro.service.ShiroServiceProcessor;
 import com.braintribe.model.processing.shiro.util.AuthenticationAccessIdSupplier;
 import com.braintribe.model.processing.shiro.util.ExternalIconUrlHelper;
+import com.braintribe.model.processing.shiro.util.ShiroTools;
 import com.braintribe.model.shiro.deployment.FixedNewUserRoleProvider;
 import com.braintribe.model.shiro.deployment.Login;
 import com.braintribe.model.shiro.deployment.MappedNewUserRoleProvider;
@@ -100,6 +101,14 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setMulticastSessionDao(multicastSessionDao());
 		bean.setAuthAccessIdSupplier(authenticationAccessIdSupplier());
 		bean.setSessionFactory(tfPlatform.systemUserRelated().sessionFactory());
+		bean.setShiroTools(shiroTools());
+		return bean;
+	}
+
+	@Managed
+	private ShiroTools shiroTools() {
+		ShiroTools bean = new ShiroTools();
+		bean.setModuleClassLoader(module.moduleClassLoader());
 		return bean;
 	}
 
@@ -140,6 +149,7 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setExternalIconUrlHelper(externalIconUrlHelper());
 		bean.setObfuscateLogOutput(deployable.getObfuscateLogOutput());
 		bean.setModuleClassLoader(module.moduleClassLoader());
+		bean.setShiroTools(shiroTools());
 		return bean;
 	}
 

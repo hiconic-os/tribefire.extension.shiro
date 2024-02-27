@@ -77,6 +77,8 @@ import com.braintribe.model.processing.session.api.persistence.SessionFactoryBas
 import com.braintribe.model.processing.shiro.ShiroConstants;
 import com.braintribe.model.processing.shiro.bootstrapping.NewUserRoleProvider;
 import com.braintribe.model.processing.shiro.util.ExternalIconUrlHelper;
+import com.braintribe.model.processing.shiro.util.ShiroTools;
+import com.braintribe.model.processing.shiro.util.ShiroTools.TokenContent;
 import com.braintribe.model.processing.tfconstants.TribefireConstants;
 import com.braintribe.model.query.EntityQuery;
 import com.braintribe.model.resource.Icon;
@@ -115,9 +117,6 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 
 import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.Jwts;
 import net.minidev.json.JSONArray;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
@@ -170,6 +169,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	private Boolean obfuscateLogOutput = Boolean.TRUE;
 
 	private ClassLoader moduleClassLoader;
+	private ShiroTools shiroTools;
 
 	@Override
 	public void init() throws ServletException {
@@ -1201,13 +1201,10 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 					int i = token.lastIndexOf('.');
 					if (i > 0 && StringTools.countOccurrences(token, ".") == 2) {
-						String withoutSignature = token.substring(0, i + 1);
 
-						ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-						Thread.currentThread().setContextClassLoader(moduleClassLoader);
-						try {
-							Jwt jwt = Jwts.parserBuilder().build().parse(withoutSignature);
-							Claims body = (Claims) jwt.getBody();
+						TokenContent tokenWithoutValidation = shiroTools.parseTokenWithoutValidation(token, true);
+						if (tokenWithoutValidation != null) {
+							Claims body = tokenWithoutValidation.body();
 
 							for (Map.Entry<String, Object> claim : body.entrySet()) {
 								String claimKey = claim.getKey();
@@ -1217,12 +1214,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 									logger.debug(() -> "Added claim: " + claimKey + " = " + claimValue);
 								}
 							}
-						} catch (ExpiredJwtException e) {
-							logger.warn("Not accepting an expired token: " + key + ": " + token);
-						} catch (Exception e) {
-							logger.debug("Error while parsing potential JWT token: " + key + ": " + token, e);
-						} finally {
-							Thread.currentThread().setContextClassLoader(oldClassLoader);
+
 						}
 					}
 				}
@@ -1340,6 +1332,11 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	@Required
 	public void setModuleClassLoader(ClassLoader classLoader) {
 		this.moduleClassLoader = classLoader;
+	}
+	@Configurable
+	@Required
+	public void setShiroTools(ShiroTools shiroTools) {
+		this.shiroTools = shiroTools;
 	}
 
 }
