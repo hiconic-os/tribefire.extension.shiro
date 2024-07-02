@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.braintribe.model.processing.shiro.util.ShiroTools;
 import com.braintribe.model.shiro.service.EnsureUserByIdToken;
 import com.braintribe.model.shiro.service.EnsuredUser;
 import com.braintribe.model.user.User;
@@ -67,6 +68,8 @@ public class ShiroServiceProcessorTest {
 				return newUser;
 			}
 		};
+
+		proc.setShiroTools(new ShiroTools()); // But why?
 
 		EnsuredUser result = proc.ensureUserByIdToken(null, request);
 		assertThat(result).isNotNull();
