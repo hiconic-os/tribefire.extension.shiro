@@ -37,7 +37,7 @@ limitations under the License.
         <V.org.pac4j_pac4j-oidc>5.4.3</V.org.pac4j_pac4j-oidc>
         <V.org.pac4j_pac4j-oauth>5.4.3</V.org.pac4j_pac4j-oauth>
         <V.org.pac4j_pac4j-openid>4.5.6</V.org.pac4j_pac4j-openid>
-        <V.org.apache.shiro>1.8.0</V.org.apache.shiro>
+        <V.org.apache.shiro>1.12.0</V.org.apache.shiro>
         <V.xerces>2.12.1</V.xerces>
     </properties>
     <licenses>
