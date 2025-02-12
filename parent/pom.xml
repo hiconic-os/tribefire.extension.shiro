@@ -34,9 +34,9 @@ limitations under the License.
         <V.javax.servlet>3.1.0</V.javax.servlet>
         <V.net.sourceforge.nekohtml>1.9.22</V.net.sourceforge.nekohtml>
         <V.org.apache.httpcomponents>4.5.13</V.org.apache.httpcomponents>
-        <V.org.pac4j_pac4j-oidc>5.4.3</V.org.pac4j_pac4j-oidc>
-        <V.org.pac4j_pac4j-oauth>5.4.3</V.org.pac4j_pac4j-oauth>
-        <V.org.pac4j_pac4j-openid>4.5.6</V.org.pac4j_pac4j-openid>
+        <V.org.pac4j_pac4j-oidc>5.7.7</V.org.pac4j_pac4j-oidc>
+        <V.org.pac4j_pac4j-oauth>5.7.7</V.org.pac4j_pac4j-oauth>
+        <V.org.pac4j_pac4j-openid>4.5.8</V.org.pac4j_pac4j-openid>
         <V.org.apache.shiro>1.12.0</V.org.apache.shiro>
         <V.xerces>2.12.1</V.xerces>
     </properties>
