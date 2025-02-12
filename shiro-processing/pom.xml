@@ -66,6 +66,12 @@ limitations under the License.
             <groupId>org.pac4j</groupId>
             <artifactId>pac4j-oidc</artifactId>
             <version>${V.org.pac4j_pac4j-oidc}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.pac4j</groupId>
@@ -219,6 +225,11 @@ limitations under the License.
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${V.com.fasterxml.jackson.core}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${V.guava}</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.nekohtml</groupId>
