@@ -32,7 +32,7 @@ limitations under the License.
         <V.io.buji>7.0.0</V.io.buji>
         <V.io.jsonwebtoken>0.12.5</V.io.jsonwebtoken>
         <V.javax.servlet>3.1.0</V.javax.servlet>
-        <V.net.sourceforge.nekohtml>1.9.22</V.net.sourceforge.nekohtml>
+        <V.org.nokogiri.nekohtml>1.9.22.noko2</V.org.nokogiri.nekohtml>
         <V.org.apache.httpcomponents>4.5.13</V.org.apache.httpcomponents>
         <V.org.pac4j_pac4j-oidc>5.7.7</V.org.pac4j_pac4j-oidc>
         <V.org.pac4j_pac4j-oauth>5.7.7</V.org.pac4j_pac4j-oauth>

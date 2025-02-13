@@ -232,9 +232,9 @@ limitations under the License.
             <version>${V.guava}</version>
         </dependency>
         <dependency>
-            <groupId>net.sourceforge.nekohtml</groupId>
-            <artifactId>nekohtml</artifactId>
-            <version>${V.net.sourceforge.nekohtml}</version>
+		    <groupId>org.nokogiri</groupId>
+		    <artifactId>nekohtml</artifactId>
+            <version>${V.org.nokogiri.nekohtml}</version>
             <exclusions>
                 <exclusion>
                     <groupId>xerces</groupId>
