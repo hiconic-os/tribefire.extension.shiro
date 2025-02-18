@@ -27,7 +27,7 @@ import org.pac4j.oauth.client.FacebookClient;
 import org.pac4j.oauth.client.GenericOAuth20Client;
 import org.pac4j.oauth.client.GitHubClient;
 import org.pac4j.oauth.client.TwitterClient;
-import org.pac4j.oidc.client.AzureAdClient;
+import org.pac4j.oidc.client.AzureAd2Client;
 import org.pac4j.oidc.client.GoogleOidcClient;
 import org.pac4j.oidc.client.OidcClient;
 
@@ -98,9 +98,10 @@ public class ShiroIniFactory implements Supplier<String> {
 
 					ShiroAzureAdClient azureAdClient = (ShiroAzureAdClient) client;
 
-					addConfiguration(authClient, "oidcConfig_" + name, "org.pac4j.oidc.config.AzureAdOidcConfiguration");
+					addConfiguration(authClient, "oidcConfig_" + name, "org.pac4j.oidc.config.AzureAd2OidcConfiguration");
 					addConfiguration(authClient, "oidcConfig_" + name + ".tenant", azureAdClient.getTenant());
 					additionalCallbackUrlPostfixes.add("/AzureAd");
+					additionalCallbackUrlPostfixes.add("/" + name);
 
 				} else {
 					addConfiguration(authClient, "oidcConfig_" + name, "org.pac4j.oidc.config.OidcConfiguration");
@@ -336,7 +337,7 @@ public class ShiroIniFactory implements Supplier<String> {
 			// return LoggingGoogleOidcClient.class; //Activate this for debug logging
 			return GoogleOidcClient.class;
 		} else if (client instanceof ShiroAzureAdClient) {
-			return AzureAdClient.class;
+			return AzureAd2Client.class;
 		} else if (client instanceof ShiroFacebookClient) {
 			return FacebookClient.class;
 		} else if (client instanceof ShiroGithubClient) {
