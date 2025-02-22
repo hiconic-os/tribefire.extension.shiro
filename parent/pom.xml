@@ -28,7 +28,7 @@ limitations under the License.
         <V.tribefire.cortex>[3.0,3.1)</V.tribefire.cortex>
         <V.tribefire.setup.classic.env>[3.0,3.1)</V.tribefire.setup.classic.env>
         <V.tribefire.extension.jdbcdriver>[3.0,3.1)</V.tribefire.extension.jdbcdriver>
-        <V.com.fasterxml.jackson.core>2.13.3</V.com.fasterxml.jackson.core>
+        <V.com.fasterxml.jackson.core>2.18.2</V.com.fasterxml.jackson.core>
         <V.io.buji>7.0.0</V.io.buji>
         <V.io.jsonwebtoken>0.12.6</V.io.jsonwebtoken>
         <V.javax.servlet>3.1.0</V.javax.servlet>
