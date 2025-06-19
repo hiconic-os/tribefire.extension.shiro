@@ -210,6 +210,17 @@ limitations under the License.
             <groupId>org.apache.shiro</groupId>
             <artifactId>shiro-web</artifactId>
             <version>${V.org.apache.shiro}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>${V.commons-beanutils}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
