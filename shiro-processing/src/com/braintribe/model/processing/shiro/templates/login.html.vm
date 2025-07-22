@@ -43,8 +43,6 @@ function login() {
 	var request = new XMLHttpRequest();
 	
  	// Set up our request
- 	//request.open('POST', 'api/v1/authenticate');
- 	
  	request.open('POST', '${publicServicesUrl}/login/auth');
 	request.setRequestHeader("Content-Type","application/json");
 	request.setRequestHeader("Accept","application/json");
