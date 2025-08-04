@@ -63,6 +63,7 @@ import com.braintribe.codec.CodecException;
 import com.braintribe.codec.string.MapCodec;
 import com.braintribe.codec.string.UrlEscapeCodec;
 import com.braintribe.common.attribute.AttributeContext;
+import com.braintribe.common.attribute.common.Waypoint;
 import com.braintribe.common.lcd.Numbers;
 import com.braintribe.common.lcd.Pair;
 import com.braintribe.gm.model.reason.Maybe;
@@ -248,7 +249,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 							initializeContext(req);
 							try {
-
 								OpenUserSession authRequest = createOpenUserSessionRequest(username, req);
 
 								enrichOpenUserSessionRequest(authRequest, shiroClient, attributeMap);
@@ -1044,6 +1044,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	}
 
 	private UserSession authenticate(HttpServletResponse resp, OpenUserSession authRequest) throws AuthenticationException {
+		AttributeContexts.push(AttributeContexts.derivePeek().set(Waypoint.class, "platform-login").build());
+
 		try {
 			EvalContext<? extends OpenUserSessionResponse> responseContext = authRequest.eval(evaluator);
 			Maybe<? extends OpenUserSessionResponse> reasoned = responseContext.getReasoned();
@@ -1059,6 +1061,9 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			return null;
 		} catch (Exception e) {
 			throw new AuthenticationException("Error while trying to evaluate the authentication request: " + authRequest, e);
+		}
+		finally {
+			AttributeContexts.pop();
 		}
 	}
 
