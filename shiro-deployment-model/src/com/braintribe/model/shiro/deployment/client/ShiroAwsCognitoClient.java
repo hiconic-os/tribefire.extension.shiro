@@ -17,9 +17,8 @@ package com.braintribe.model.shiro.deployment.client;
 
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
-import com.braintribe.model.shiro.deployment.HasRolesField;
 
-public interface ShiroAwsCognitoClient extends ShiroOpenIdClient, HasRolesField {
+public interface ShiroAwsCognitoClient extends ShiroOpenIdClient {
 
 	final EntityType<ShiroAwsCognitoClient> T = EntityTypes.T(ShiroAwsCognitoClient.class);
 

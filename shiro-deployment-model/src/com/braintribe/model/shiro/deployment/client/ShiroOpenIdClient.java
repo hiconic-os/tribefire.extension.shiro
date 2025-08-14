@@ -20,9 +20,10 @@ import java.util.Map;
 import com.braintribe.model.generic.annotation.Initializer;
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
+import com.braintribe.model.shiro.deployment.HasRolesField;
 import com.braintribe.model.shiro.deployment.ShiroClient;
 
-public interface ShiroOpenIdClient extends ShiroClient, ShiroScope {
+public interface ShiroOpenIdClient extends ShiroClient, ShiroScope, HasRolesField {
 
 	final EntityType<ShiroOpenIdClient> T = EntityTypes.T(ShiroOpenIdClient.class);
 
