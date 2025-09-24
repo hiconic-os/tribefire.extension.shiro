@@ -253,5 +253,15 @@ limitations under the License.
                 </exclusion>
             </exclusions>
         </dependency>
+		<dependency>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
+			<version>${V.net.minidev}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>oauth2-oidc-sdk</artifactId>
+			<version>${V.com.nimbusds}</version>
+		</dependency>		
     </dependencies>
 </project>

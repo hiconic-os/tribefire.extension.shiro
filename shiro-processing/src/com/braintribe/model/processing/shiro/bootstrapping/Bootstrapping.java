@@ -25,8 +25,7 @@ import com.braintribe.cfg.Required;
 import com.braintribe.logging.Logger;
 
 /**
- * This class takes care of initializing the environment loader (via LifecycleAware mechanics). It also assigns the
- * custom session DAO.
+ * This class takes care of initializing the environment loader (via LifecycleAware mechanics). It also assigns the custom session DAO.
  */
 public class Bootstrapping implements LifecycleAware {
 
@@ -35,6 +34,8 @@ public class Bootstrapping implements LifecycleAware {
 	private ServletContext servletContext;
 	private CustomEnvironmentLoader environmentLoaderListener;
 
+	private ClassLoader moduleClassLoader;
+
 	public void start() {
 
 		logger.debug(() -> "Starting the initEnvironment method of the environmentLoaderListener: " + environmentLoaderListener);
@@ -42,7 +43,15 @@ public class Bootstrapping implements LifecycleAware {
 		String ENVIRONMENT_ATTRIBUTE_KEY = EnvironmentLoader.class.getName() + ".ENVIRONMENT_ATTRIBUTE_KEY";
 		servletContext.removeAttribute(ENVIRONMENT_ATTRIBUTE_KEY);
 
-		environmentLoaderListener.initEnvironment(servletContext);
+		Thread currentThread = Thread.currentThread();
+		ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+
+		try {
+			currentThread.setContextClassLoader(moduleClassLoader);
+			environmentLoaderListener.initEnvironment(servletContext);
+		} finally {
+			currentThread.setContextClassLoader(previousContextClassLoader);
+		}
 
 		logger.debug(() -> "Done with initializing the WebEnvironment");
 	}
@@ -62,6 +71,12 @@ public class Bootstrapping implements LifecycleAware {
 	@Configurable
 	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = servletContext;
+	}
+
+	@Required
+	@Configurable
+	public void setModuleClassLoader(ClassLoader moduleClassLoader) {
+		this.moduleClassLoader = moduleClassLoader;
 	}
 
 	@Override

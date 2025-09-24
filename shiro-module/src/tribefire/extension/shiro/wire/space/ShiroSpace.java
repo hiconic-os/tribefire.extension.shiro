@@ -31,6 +31,7 @@ import com.braintribe.wire.api.annotation.Import;
 import com.braintribe.wire.api.annotation.Managed;
 import com.braintribe.wire.api.space.WireSpace;
 
+import tribefire.module.wire.contract.ModuleReflectionContract;
 import tribefire.module.wire.contract.ModuleResourcesContract;
 import tribefire.module.wire.contract.TribefireWebPlatformContract;
 
@@ -43,11 +44,15 @@ public class ShiroSpace implements WireSpace {
 	@Import
 	private ModuleResourcesContract moduleResources;
 
+	@Import
+	private ModuleReflectionContract reflection;
+
 	@Managed
 	public Bootstrapping bootstrapping() {
 		Bootstrapping bean = new Bootstrapping();
 		bean.setEnvironmentLoaderListener(environmentLoader());
 		bean.setServletContext(tfPlatform.servlets().context());
+		bean.setModuleClassLoader(reflection.moduleClassLoader());
 		return bean;
 	}
 
