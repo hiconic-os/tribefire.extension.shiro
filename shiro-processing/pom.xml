@@ -262,6 +262,6 @@ limitations under the License.
 			<groupId>com.nimbusds</groupId>
 			<artifactId>oauth2-oidc-sdk</artifactId>
 			<version>${V.com.nimbusds}</version>
-		</dependency>		
+		</dependency>
     </dependencies>
 </project>
