@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import com.braintribe.cfg.Configurable;
 import com.braintribe.cfg.Required;
+import com.braintribe.exception.Exceptions;
 import com.braintribe.logging.Logger;
 import com.braintribe.model.generic.GenericEntity;
 import com.braintribe.model.processing.bootstrapping.TribefireRuntime;
@@ -33,8 +34,8 @@ import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
 import com.braintribe.utils.lcd.StringTools;
 
 /**
- * Worker that is responsible for finalize the bootstrapping of the ShiroCartridge after everything has been setup and
- * tribefire services is reachable. The functionality will not be available before this worker has been started.
+ * Worker that is responsible for finalize the bootstrapping of the ShiroCartridge after everything has been setup and tribefire services is
+ * reachable. The functionality will not be available before this worker has been started.
  */
 public class BootstrappingWorker implements Worker {
 
@@ -103,7 +104,12 @@ public class BootstrappingWorker implements Worker {
 
 		logger.debug(() -> "Initiating the bootstrapping of Shiro");
 
-		bootstrapping.start();
+		try {
+			bootstrapping.start();
+		} catch (Throwable e) {
+			logger.error("Error while bootstrapping Shiro: " + e.getMessage(), e);
+			throw Exceptions.unchecked(e);
+		}
 
 		logger.debug(
 				() -> "Done with finalizing the configuration. Activating the proxy filter (fallbackUrl: " + configuration.getFallbackUrl() + ").");

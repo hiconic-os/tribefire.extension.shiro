@@ -43,8 +43,8 @@ import com.braintribe.util.servlet.util.ServletTools;
 import com.braintribe.utils.StringTools;
 
 /**
- * Delegating filter that only forwards requests to the ShiroFilter after it has been activated. This is done by the
- * {@link BootstrappingWorker} after the configuration was read from the tribefire services.
+ * Delegating filter that only forwards requests to the ShiroFilter after it has been activated. This is done by the {@link BootstrappingWorker} after
+ * the configuration was read from the tribefire services.
  */
 public class ShiroProxyFilter implements Filter {
 
@@ -159,6 +159,7 @@ public class ShiroProxyFilter implements Filter {
 				throw se;
 			}
 		} else {
+			logger.debug(() -> "ShiroProxyFilter has not yet been activated.");
 			chain.doFilter(request, response);
 		}
 
