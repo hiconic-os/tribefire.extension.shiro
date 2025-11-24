@@ -220,8 +220,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				while (iterator != null && iterator.hasNext()) {
 
 					Object principal = iterator.next();
-					logger.debug(() -> "Inspecting principal: " + principal);
-
 					if (principal instanceof Pac4jPrincipal) {
 
 						logger.debug(() -> "Principal is of the expected type.");
