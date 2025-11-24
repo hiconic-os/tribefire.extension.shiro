@@ -16,6 +16,7 @@
 package com.braintribe.model.shiro.deployment;
 
 import com.braintribe.model.extensiondeployment.access.AccessRequestProcessor;
+import com.braintribe.model.generic.annotation.Initializer;
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
 
@@ -28,5 +29,9 @@ public interface ShiroServiceProcessor extends AccessRequestProcessor {
 
 	String getPathIdentifier();
 	void setPathIdentifier(String pathIdentifier);
+
+	@Initializer("true")
+	Boolean getObfuscateLogOutput();
+	void setObfuscateLogOutput(Boolean obfuscateLogOutput);
 
 }

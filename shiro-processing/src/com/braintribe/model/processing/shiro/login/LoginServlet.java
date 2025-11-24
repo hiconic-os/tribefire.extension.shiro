@@ -172,7 +172,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	private final ConcurrentHashMap<String, String> iconContentCache = new ConcurrentHashMap<>();
 
-	private Boolean obfuscateLogOutput = Boolean.TRUE;
+	private boolean obfuscateLogOutput = true;
 
 	private ClassLoader moduleClassLoader;
 	private ShiroTools shiroTools;
@@ -1344,7 +1344,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		this.externalIconUrlHelper = externalIconUrlHelper;
 	}
 	@Configurable
-	@Required
 	public void setObfuscateLogOutput(Boolean obfuscateLogOutput) {
 		if (obfuscateLogOutput != null) {
 			this.obfuscateLogOutput = obfuscateLogOutput;

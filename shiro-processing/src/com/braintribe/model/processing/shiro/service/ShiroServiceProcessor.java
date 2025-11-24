@@ -71,6 +71,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	private Supplier<String> authAccessIdSupplier;
 	private PersistenceGmSessionFactory sessionFactory;
 	private ShiroTools shiroTools;
+	private boolean obfuscateLogOutput = true;
 
 	@Override
 	protected void configureDispatching(DispatchConfiguration<ShiroRequest, ShiroResult> dispatching) {
@@ -86,7 +87,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 
 		String idToken = request.getIdToken();
 		IdTokenContent tokenContent = parseIdToken(idToken, request);
-		logger.debug(() -> "Parsed ID token " + idToken + " to: " + tokenContent);
+		logger.debug(() -> "Parsed ID token content" + tokenContent + " from: " + obfuscateIfNeeded(idToken));
 
 		User user = ensureUser(tokenContent.username, tokenContent.firstName, tokenContent.lastName, tokenContent.email, tokenContent.roles);
 
@@ -95,6 +96,13 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		result.setSubject(tokenContent.subject);
 
 		return result;
+	}
+
+	private String obfuscateIfNeeded(String token) {
+		if (obfuscateLogOutput)
+			return StringTools.simpleObfuscatePassword(token);
+		else
+			return token;
 	}
 
 	protected IdTokenContent parseIdToken(String idToken, EnsureUserByIdToken request) {
@@ -348,5 +356,10 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	public void setShiroTools(ShiroTools shiroTools) {
 		this.shiroTools = shiroTools;
 	}
-
+	@Configurable
+	public void setObfuscateLogOutput(Boolean obfuscateLogOutput) {
+		if (obfuscateLogOutput != null) {
+			this.obfuscateLogOutput = obfuscateLogOutput;
+		}
+	}
 }

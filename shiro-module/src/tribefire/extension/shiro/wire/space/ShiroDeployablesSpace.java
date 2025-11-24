@@ -106,6 +106,7 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setAuthAccessIdSupplier(authenticationAccessIdSupplier());
 		bean.setSessionFactory(tfPlatform.systemUserRelated().sessionFactory());
 		bean.setShiroTools(shiroTools());
+		bean.setObfuscateLogOutput(deployable.getObfuscateLogOutput());
 		return bean;
 	}
 

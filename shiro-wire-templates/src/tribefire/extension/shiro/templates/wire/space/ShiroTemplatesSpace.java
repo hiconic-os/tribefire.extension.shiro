@@ -400,12 +400,12 @@ public class ShiroTemplatesSpace implements WireSpace, ShiroTemplatesContract {
 	@Managed
 	@Override
 	public ShiroServiceProcessor serviceRequestProcessor(ShiroTemplateContext context) {
-
 		ShiroServiceProcessor bean = context.create(ShiroServiceProcessor.T, InstanceConfiguration.currentInstance());
 		bean.setName("Shiro Service Processor");
 		bean.setModule(context.getModule());
 		bean.setConfiguration(authenticationConfiguration(context));
 		bean.setPathIdentifier(ShiroConstants.PATH_IDENTIFIER);
+		bean.setObfuscateLogOutput(context.getObfuscateLogOutput());
 
 		return bean;
 	}
