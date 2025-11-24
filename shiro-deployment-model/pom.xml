@@ -20,7 +20,7 @@ limitations under the License.
         <version>[5.0,5.1)</version>
     </parent>
     <artifactId>shiro-deployment-model</artifactId>
-    <version>5.0.7</version>
+    <version>5.0.8</version>
     <properties>
         <archetype>model</archetype>
     </properties>
