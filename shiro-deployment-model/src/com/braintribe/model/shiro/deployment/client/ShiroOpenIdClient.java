@@ -18,6 +18,7 @@ package com.braintribe.model.shiro.deployment.client;
 import java.util.Map;
 
 import com.braintribe.model.generic.annotation.Initializer;
+import com.braintribe.model.generic.annotation.meta.Confidential;
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
 import com.braintribe.model.shiro.deployment.HasRolesField;
@@ -27,9 +28,13 @@ public interface ShiroOpenIdClient extends ShiroClient, ShiroScope, HasRolesFiel
 
 	final EntityType<ShiroOpenIdClient> T = EntityTypes.T(ShiroOpenIdClient.class);
 
+	// Marked as confidential, as the props for the value are encrypted, e.g. SHIRO_GOOGLE_CLIENTID_ENCRYPTED 
+	@Confidential
 	String getClientId();
 	void setClientId(String clientId);
 
+	// Marked as confidential, as the props for the value are encrypted, e.g. SHIRO_GOOGLE_SECRET_ENCRYPTED 
+	@Confidential
 	String getSecret();
 	void setSecret(String secret);
 

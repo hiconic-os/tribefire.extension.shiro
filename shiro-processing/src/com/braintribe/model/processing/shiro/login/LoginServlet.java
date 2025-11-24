@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -334,16 +335,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			sb.append("Linked Id: " + cp.getLinkedId() + "\n");
 			sb.append("Username: " + username + "\n");
 			sb.append("Client: " + (shiroClient != null ? shiroClient.getName() : "No Client detected.") + "\n");
-			for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
-				String key = entry.getKey();
-				Object value = entry.getValue();
-				if (obfuscateLogOutput) {
-					if (value != null && (key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token"))) {
-						value = StringTools.simpleObfuscatePassword(value.toString());
-					}
-				}
-				sb.append(key + "=" + value + "\n");
-			}
+			sb.append(obfuscateAttributeMap(attributeMap, "\n"));
 			logger.debug("\n" + StringTools.asciiBoxMessage(sb.toString(), -1));
 		}
 	}
@@ -919,7 +911,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						logger.debug("Username derived from pattern: " + username);
 					break;
 				} catch (IllegalArgumentException iae) {
-					logger.debug("Could not derive a username from pattern '" + usernamePattern + "' with properties: " + attributeMap);
+					logger.debug("Could not derive a username from pattern '" + usernamePattern + "' with properties: " + obfuscateAttributeMap(attributeMap, ","));
 				}
 			}
 		}
@@ -988,7 +980,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
 				String propName = entry.getKey();
 				String attributeAsString = "" + entry.getValue();
-				logger.debug(() -> "Setting open session request property: " + propName + "=" + attributeAsString);
+				logger.debug(() -> "Setting open session request property: " + propName + "=" + obfuscateAttrValueIfNeeded(attributeAsString, propName));
 				authRequest.getProperties().put(propName, attributeAsString);
 			}
 		} else {
@@ -996,7 +988,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				Object attribute = attributeMap.get(propName);
 				if (attribute != null) {
 					String attributeAsString = attribute.toString();
-					logger.debug(() -> "Setting open session request property: " + propName + "=" + attributeAsString);
+					logger.debug(() -> "Setting open session request property: " + propName + "=" + obfuscateAttrValueIfNeeded(attribute, propName));
 					authRequest.getProperties().put(propName, attributeAsString);
 				} else {
 					logger.debug(() -> "Could not find profile property: " + propName);
@@ -1229,6 +1221,25 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		}
 
 		return map;
+	}
+
+	private String obfuscateAttributeMap(Map<String, Object> attributeMap, String entryDelimiter) {
+		StringJoiner sj = new StringJoiner(entryDelimiter);
+		
+		for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+			String key = entry.getKey();
+			Object value = obfuscateAttrValueIfNeeded(entry.getValue(), key);
+			sj.add(key + "=" + value);
+		}
+		
+		return sj.toString();
+	}
+
+	private String obfuscateAttrValueIfNeeded(Object value, String key) {
+		if (value != null && obfuscateLogOutput && (key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token")))
+			return StringTools.simpleObfuscatePassword(value.toString());
+		else
+			return "" + value;
 	}
 
 	@Configurable
