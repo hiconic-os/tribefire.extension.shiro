@@ -1196,7 +1196,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				}
 
 				if (!StringTools.isBlank(token)) {
-					logger.debug("Looking at potential JWT token: " + key + "=" + token);
+					logger.debug("Looking at potential JWT token: " + key + "=" + obfuscateAttrValueIfNeeded(token, key));
 
 					int i = token.lastIndexOf('.');
 					if (i > 0 && StringTools.countOccurrences(token, ".") == 2) {
@@ -1236,12 +1236,17 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	}
 
 	private String obfuscateAttrValueIfNeeded(Object value, String key) {
-		if (value != null && obfuscateLogOutput && (key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token")))
+		if (value != null && obfuscateLogOutput && isCondidentialAttr(key))
 			return StringTools.simpleObfuscatePassword(value.toString());
 		else
 			return "" + value;
 	}
 
+	private boolean isCondidentialAttr(String key) {
+		return key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token");
+	}
+
+	
 	@Configurable
 	public void setRemoteAddressResolver(RemoteClientAddressResolver remoteAddressResolver) {
 		this.remoteAddressResolver = remoteAddressResolver;
