@@ -20,7 +20,7 @@ limitations under the License.
         <version>[5.0,5.1)</version>
     </parent>
     <artifactId>shiro-processing</artifactId>
-    <version>5.0.16</version>
+    <version>5.0.17</version>
     <properties>
         <archetype>library</archetype>
     </properties>
