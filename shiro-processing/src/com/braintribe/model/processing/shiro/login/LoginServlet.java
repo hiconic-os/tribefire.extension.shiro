@@ -258,8 +258,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 									// Do authentication.
 									session = authenticate(resp, authRequest);
 									if (session == null) {
-										logger.debug("Authentication of user " + username
-												+ " failed. Please check whether the Cartridge has the 'tf-admin' role.");
+										logger.debug("Authentication of user " + username + " failed.");
 										return; // Response message is already handled in authenticate.
 									}
 
