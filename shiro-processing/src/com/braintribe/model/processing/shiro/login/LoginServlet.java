@@ -1212,7 +1212,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 									logger.debug(() -> "Added claim: " + claimKey + " = " + claimValue);
 								}
 							}
-
 						}
 					}
 				}
@@ -1235,13 +1234,13 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	}
 
 	private String obfuscateAttrValueIfNeeded(Object value, String key) {
-		if (value != null && obfuscateLogOutput && isCondidentialAttr(key))
-			return StringTools.simpleObfuscatePassword(value.toString());
+		if (value != null && obfuscateLogOutput && isConfidentialAttr(key))
+			return "*****";
 		else
 			return "" + value;
 	}
 
-	private boolean isCondidentialAttr(String key) {
+	private boolean isConfidentialAttr(String key) {
 		return key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token");
 	}
 
