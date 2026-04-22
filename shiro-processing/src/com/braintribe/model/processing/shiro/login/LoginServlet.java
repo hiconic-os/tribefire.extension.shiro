@@ -194,7 +194,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 		String showLogin = req.getParameter("showLogin");
 		if (showLogin != null && showLogin.equalsIgnoreCase("true")) {
-			logger.debug(() -> "The showLogin parameter is true. Hence, showing the login dialog and don't do any further action.");
+			logger.debug(
+					() -> "The showLogin parameter is true. Hence, showing the login dialog and don't do any further action.");
 			super.service(req, resp);
 			return;
 		}
@@ -242,7 +243,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						// We do not to use Shiro to maintain the user session; this is our turf
 						SecurityUtils.getSecurityManager().logout(user);
 
-						if (username != null && acceptUsername(username) && ensureUser(username, shiroClient, cp, attributeMap)) {
+						if (username != null && acceptUsername(username)
+								&& ensureUser(username, shiroClient, cp, attributeMap)) {
 
 							logger.debug(() -> "Authenticating user: " + username);
 
@@ -263,7 +265,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 									}
 
 									final String sessionId = session.getSessionId();
-									logger.debug(() -> "Successfully authenticated user: " + username + " with session: " + sessionId);
+									logger.debug(() -> "Successfully authenticated user: " + username
+											+ " with session: " + sessionId);
 
 									String continuePath = acquireContinuePath(req);
 									String redirectUrl = continuePath;
@@ -297,7 +300,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 							}
 
 						} else {
-							logger.debug(() -> "User " + username + " is either not null or does not exist in the 'auth' Access.");
+							logger.debug(() -> "User " + username
+									+ " is either not null or does not exist in the 'auth' Access.");
 						}
 					} else {
 						logger.debug(() -> "Principal " + principal + " is not of the expected type.");
@@ -323,11 +327,13 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				super.service(req, resp);
 			}
 		} else {
-			logger.debug(() -> "A user has been authenticated. Hence, a message has been sent to the client already at this point.");
+			logger.debug(
+					() -> "A user has been authenticated. Hence, a message has been sent to the client already at this point.");
 		}
 	}
 
-	private void logPrincipal(UserProfile cp, Map<String, Object> attributeMap, final String username, ShiroClient shiroClient) {
+	private void logPrincipal(UserProfile cp, Map<String, Object> attributeMap, final String username,
+			ShiroClient shiroClient) {
 		if (logger.isDebugEnabled()) {
 			StringBuilder sb = new StringBuilder("Authenticated principal received: \n");
 			sb.append("Id: " + cp.getId() + "\n");
@@ -340,7 +346,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	}
 
 	protected boolean acceptUsername(String username) {
-		if ((userAcceptList == null || userAcceptList.isEmpty()) && (userBlockList == null || userBlockList.isEmpty())) {
+		if ((userAcceptList == null || userAcceptList.isEmpty())
+				&& (userBlockList == null || userBlockList.isEmpty())) {
 			return true;
 		}
 		if (username == null) {
@@ -448,7 +455,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return new Pair<>("", "/tribefire-services");
 	}
 
-	private boolean ensureUser(String username, ShiroClient shiroClient, UserProfile cp, Map<String, Object> attributeMap) {
+	private boolean ensureUser(String username, ShiroClient shiroClient, UserProfile cp,
+			Map<String, Object> attributeMap) {
 
 		PersistenceGmSession authSession = authSession();
 		EntityQuery query = EntityQueryBuilder.from(User.T).where().property(User.name).eq(username).done();
@@ -456,7 +464,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		if (existingUser == null) {
 
 			if (!createUsers) {
-				logger.debug(() -> "User " + username + " does not exist. The configuration is set to NOT create a new user on the fly.");
+				logger.debug(() -> "User " + username
+						+ " does not exist. The configuration is set to NOT create a new user on the fly.");
 				return false;
 			}
 
@@ -494,17 +503,22 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 			List<String> externalRoles = getRolesFromExternal(rolesProvider, attributeMap);
 			if (externalRoles != null && !externalRoles.isEmpty()) {
-				logger.debug(() -> "The authentication of the user resulted in these roles from the external system: " + externalRoles);
+				logger.debug(() -> "The authentication of the user resulted in these roles from the external system: "
+						+ externalRoles);
 				roles.addAll(externalRoles);
 			} else {
 				logger.debug(() -> "The authentication of the user resulted in NO roles.");
 			}
 
-			boolean exclusive = rolesProvider.getExclusiveRoleProvider() != null ? rolesProvider.getExclusiveRoleProvider() : false;
-			logger.debug(() -> "The role provider (client) is set to be the only source of roles: " + exclusive + "; is it a new user: " + isNewUser);
+			boolean exclusive = rolesProvider.getExclusiveRoleProvider() != null
+					? rolesProvider.getExclusiveRoleProvider()
+					: false;
+			logger.debug(() -> "The role provider (client) is set to be the only source of roles: " + exclusive
+					+ "; is it a new user: " + isNewUser);
 
 			if (!exclusive && isNewUser) {
-				Set<String> internallyProvidedRoles = newUserRoleProvider != null ? newUserRoleProvider.apply(user) : null;
+				Set<String> internallyProvidedRoles = newUserRoleProvider != null ? newUserRoleProvider.apply(user)
+						: null;
 				if (internallyProvidedRoles != null && !internallyProvidedRoles.isEmpty()) {
 					logger.debug(() -> "The internal role provider for new users returned: " + internallyProvidedRoles);
 					roles.addAll(internallyProvidedRoles);
@@ -512,12 +526,13 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			}
 
 			if (exclusive) {
-				logger.debug(() -> "Resetting the roles of the user " + user.getName() + " because the provider (" + shiroClient.getName()
-						+ ") is set to be the exclusive source.");
+				logger.debug(() -> "Resetting the roles of the user " + user.getName() + " because the provider ("
+						+ shiroClient.getName() + ") is set to be the exclusive source.");
 				user.getRoles().clear();
 			} else {
-				logger.debug(() -> "Keeping the existing roles of the user " + user.getName() + " because the provider (" + shiroClient.getName()
-						+ ") is not set to be the exclusive source.");
+				logger.debug(
+						() -> "Keeping the existing roles of the user " + user.getName() + " because the provider ("
+								+ shiroClient.getName() + ") is not set to be the exclusive source.");
 			}
 			if (externalRoles != null && !externalRoles.isEmpty()) {
 				logger.debug(() -> "Got roles " + roles + " from the providers.");
@@ -525,7 +540,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			}
 
 		} else {
-			logger.debug(() -> "The client " + shiroClient.getName() + " is not a roles provider. Is it a new user: " + isNewUser);
+			logger.debug(() -> "The client " + shiroClient.getName() + " is not a roles provider. Is it a new user: "
+					+ isNewUser);
 
 			if (isNewUser) {
 				Set<String> roles = newUserRoleProvider != null ? newUserRoleProvider.apply(user) : null;
@@ -568,7 +584,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	}
 
-	protected List<String> getRolesFromExternal(String pattern, FieldEncoding fieldEncoding, Map<String, Object> attributeMap) {
+	protected List<String> getRolesFromExternal(String pattern, FieldEncoding fieldEncoding,
+			Map<String, Object> attributeMap) {
 
 		List<String> allRolesCombined = new ArrayList<>();
 
@@ -613,7 +630,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return allRolesCombined;
 	}
 
-	protected List<String> readRolesWithPattern(final String pattern, FieldEncoding fieldEncoding, final Map<String, Object> attributeMap) {
+	protected List<String> readRolesWithPattern(final String pattern, FieldEncoding fieldEncoding,
+			final Map<String, Object> attributeMap) {
 		int start = pattern.indexOf("{");
 		int stop = pattern.indexOf("}", start + 1);
 		if (start == -1 || stop == -1) {
@@ -641,7 +659,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return rolesCollection;
 	}
 
-	private void enrichUser(PersistenceGmSession session, ShiroClient shiroClient, User user, UserProfile cp, Map<String, Object> attributeMap) {
+	private void enrichUser(PersistenceGmSession session, ShiroClient shiroClient, User user, UserProfile cp,
+			Map<String, Object> attributeMap) {
 
 		String pattern = shiroClient.getUserMailField();
 		if (!StringTools.isBlank(pattern)) {
@@ -687,7 +706,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						Resource uploadedResource = null;
 						try (InputStream is = new ResponseEntityInputStream(response)) {
 							String normalizedUserName = FileTools.normalizeFilename(user.getName(), '_');
-							uploadedResource = session.resources().create().name("image-" + normalizedUserName + "." + extension).store(is);
+							uploadedResource = session.resources().create()
+									.name("image-" + normalizedUserName + "." + extension).store(is);
 						}
 
 						SimpleIcon picture = session.create(SimpleIcon.T);
@@ -725,31 +745,31 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			fieldEncoding = FieldEncoding.PLAIN;
 		}
 		switch (fieldEncoding) {
-			case CSV:
-				if (spec.startsWith("[") && spec.endsWith("]")) {
-					spec = StringTools.removeFirstAndLastCharacter(spec);
+		case CSV:
+			if (spec.startsWith("[") && spec.endsWith("]")) {
+				spec = StringTools.removeFirstAndLastCharacter(spec);
+			}
+			String[] rolesStrings = StringTools.splitCommaSeparatedString(spec, true);
+			return CollectionTools2.asLinkedList(rolesStrings);
+		case JSON:
+			JSONParser parser = new JSONParser(JSONParser.MODE_PERMISSIVE);
+			JSONArray array;
+			try {
+				List<String> result = new ArrayList<>();
+				array = (JSONArray) parser.parse(spec);
+				for (int i = 0; i < array.size(); ++i) {
+					String entry = (String) array.get(i);
+					result.add(entry);
 				}
-				String[] rolesStrings = StringTools.splitCommaSeparatedString(spec, true);
-				return CollectionTools2.asLinkedList(rolesStrings);
-			case JSON:
-				JSONParser parser = new JSONParser(JSONParser.MODE_PERMISSIVE);
-				JSONArray array;
-				try {
-					List<String> result = new ArrayList<>();
-					array = (JSONArray) parser.parse(spec);
-					for (int i = 0; i < array.size(); ++i) {
-						String entry = (String) array.get(i);
-						result.add(entry);
-					}
-					return result;
-				} catch (ParseException e) {
-					logger.warn("Error while trying to parse " + spec + " as a JSON structure.", e);
-				}
-				break;
-			case PLAIN:
-				return CollectionTools2.asLinkedList(spec);
-			default:
-				break;
+				return result;
+			} catch (ParseException e) {
+				logger.warn("Error while trying to parse " + spec + " as a JSON structure.", e);
+			}
+			break;
+		case PLAIN:
+			return CollectionTools2.asLinkedList(spec);
+		default:
+			break;
 
 		}
 		return null;
@@ -764,8 +784,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		}
 	}
 
-	private void checkExistingUserUpdates(PersistenceGmSession session, ShiroClient shiroClient, User user, UserProfile cp,
-			Map<String, Object> attributeMap) {
+	private void checkExistingUserUpdates(PersistenceGmSession session, ShiroClient shiroClient, User user,
+			UserProfile cp, Map<String, Object> attributeMap) {
 
 		String pattern = shiroClient.getUserMailField();
 		if (!StringTools.isBlank(pattern)) {
@@ -775,7 +795,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 		pattern = shiroClient.getUserDescriptionPattern();
 		if (!StringTools.isBlank(pattern)) {
-			LocalizedString newLocalizedString = I18nTools.createLs(session, StringTools.patternFormat(pattern, attributeMap));
+			LocalizedString newLocalizedString = I18nTools.createLs(session,
+					StringTools.patternFormat(pattern, attributeMap));
 			if (newLocalizedString != null && user.getDescription() == null) {
 				user.setDescription(newLocalizedString);
 			}
@@ -838,7 +859,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 							try (InputStream in = buffer.openInputStream(true)) {
 
-								uploadedResource = session.resources().create().name("image-" + normalizedUserName + "." + extension).store(in);
+								uploadedResource = session.resources().create()
+										.name("image-" + normalizedUserName + "." + extension).store(in);
 
 								SimpleIcon picture = session.create(SimpleIcon.T);
 								picture.setImage(uploadedResource);
@@ -910,7 +932,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						logger.debug("Username derived from pattern: " + username);
 					break;
 				} catch (IllegalArgumentException iae) {
-					logger.debug("Could not derive a username from pattern '" + usernamePattern + "' with properties: " + obfuscateAttributeMap(attributeMap, ","));
+					logger.debug("Could not derive a username from pattern '" + usernamePattern + "' with properties: "
+							+ obfuscateAttributeMap(attributeMap, ","));
 				}
 			}
 		}
@@ -953,7 +976,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	protected void initializeContext(HttpServletRequest httpRequest) {
 
 		AttributeContext currentContext = AttributeContexts.peek();
-		AttributeContext derivedContext = currentContext.derive().set(RequestedEndpointAspect.class, httpRequest.getRequestURL().toString())
+		AttributeContext derivedContext = currentContext.derive()
+				.set(RequestedEndpointAspect.class, httpRequest.getRequestURL().toString())
 				.set(RequestorAddressAspect.class, getClientRemoteInternetAddress(httpRequest)).build();
 
 		AttributeContexts.push(derivedContext);
@@ -963,11 +987,13 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		try {
 			AttributeContexts.pop();
 		} catch (Exception e) {
-			logger.error("Failed to pop the service context" + (e.getMessage() != null ? ": " + e.getMessage() : ""), e);
+			logger.error("Failed to pop the service context" + (e.getMessage() != null ? ": " + e.getMessage() : ""),
+					e);
 		}
 	}
 
-	private void enrichOpenUserSessionRequest(OpenUserSession authRequest, ShiroClient shiroClient, Map<String, Object> attributeMap) {
+	private void enrichOpenUserSessionRequest(OpenUserSession authRequest, ShiroClient shiroClient,
+			Map<String, Object> attributeMap) {
 
 		Set<String> propertyNames = shiroClient.getSessionPropertyNames();
 		if (propertyNames.isEmpty()) {
@@ -979,7 +1005,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
 				String propName = entry.getKey();
 				String attributeAsString = "" + entry.getValue();
-				logger.debug(() -> "Setting open session request property: " + propName + "=" + obfuscateAttrValueIfNeeded(attributeAsString, propName));
+				logger.debug(() -> "Setting open session request property: " + propName + "="
+						+ obfuscateAttrValueIfNeeded(attributeAsString, propName));
 				authRequest.getProperties().put(propName, attributeAsString);
 			}
 		} else {
@@ -987,7 +1014,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				Object attribute = attributeMap.get(propName);
 				if (attribute != null) {
 					String attributeAsString = attribute.toString();
-					logger.debug(() -> "Setting open session request property: " + propName + "=" + obfuscateAttrValueIfNeeded(attribute, propName));
+					logger.debug(() -> "Setting open session request property: " + propName + "="
+							+ obfuscateAttrValueIfNeeded(attribute, propName));
 					authRequest.getProperties().put(propName, attributeAsString);
 				} else {
 					logger.debug(() -> "Could not find profile property: " + propName);
@@ -1020,10 +1048,11 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		try {
 			RemoteAddressInformation remoteAddressInformation = resolver.getRemoteAddressInformation(request);
 			String remoteAddress = remoteAddressInformation.getRemoteIp();
-			logger.info("Received an authentication request for user '" + user + "' from [" + remoteAddress + "]. Remote Address Information: "
-					+ remoteAddressInformation.toString());
+			logger.info("Received an authentication request for user '" + user + "' from [" + remoteAddress
+					+ "]. Remote Address Information: " + remoteAddressInformation.toString());
 		} catch (Exception e) {
-			String message = "Could not use the client address resolver to get the client's IP address. User: '" + user + "'";
+			String message = "Could not use the client address resolver to get the client's IP address. User: '" + user
+					+ "'";
 			logger.info(message);
 			if (logger.isDebugEnabled())
 				logger.debug(message, e);
@@ -1032,7 +1061,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return authReq;
 	}
 
-	private UserSession authenticate(HttpServletResponse resp, OpenUserSession authRequest) throws AuthenticationException {
+	private UserSession authenticate(HttpServletResponse resp, OpenUserSession authRequest)
+			throws AuthenticationException {
 		AttributeContexts.push(AttributeContexts.derivePeek().set(Waypoint.class, "platform-login").build());
 
 		try {
@@ -1049,15 +1079,17 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 			return null;
 		} catch (Exception e) {
-			throw new AuthenticationException("Error while trying to evaluate the authentication request: " + authRequest, e);
-		}
-		finally {
+			throw new AuthenticationException(
+					"Error while trying to evaluate the authentication request: " + authRequest, e);
+		} finally {
 			AttributeContexts.pop();
 		}
 	}
 
-	private void buildResponseMessage(HttpServletResponse resp, String message) throws IOException, UnsupportedEncodingException {
-		String redirectUrl = TribefireRuntime.getPublicServicesUrl() + "/component/" + externalId + "?message=" + URLEncoder.encode(message, "UTF-8");
+	private void buildResponseMessage(HttpServletResponse resp, String message)
+			throws IOException, UnsupportedEncodingException {
+		String redirectUrl = TribefireRuntime.getPublicServicesUrl() + "/component/" + pathIdentifier + "?message="
+				+ URLEncoder.encode(message, "UTF-8");
 		resp.sendRedirect(redirectUrl);
 	}
 
@@ -1083,7 +1115,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			String clientName = client.getName();
 			String authUrl = tfs + "/component/" + pathIdentifier + "/auth/" + clientName.toLowerCase();
 			if (urlEncodedContinueParameter != null) {
-				authUrl = authUrl.concat("?").concat(Constants.REQUEST_PARAM_CONTINUE).concat("=").concat(urlEncodedContinueParameter);
+				authUrl = authUrl.concat("?").concat(Constants.REQUEST_PARAM_CONTINUE).concat("=")
+						.concat(urlEncodedContinueParameter);
 			}
 			authUrls.put(clientName, authUrl);
 
@@ -1146,8 +1179,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	 * <p>
 	 * Retrieves the client's remote Internet protocol address.
 	 * 
-	 * @param request
-	 *            The request from the client.
+	 * @param request The request from the client.
 	 * @return The remote address of the client.
 	 */
 	private String getClientRemoteInternetAddress(HttpServletRequest request) {
@@ -1195,7 +1227,8 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 				}
 
 				if (!StringTools.isBlank(token)) {
-					logger.debug("Looking at potential JWT token: " + key + "=" + obfuscateAttrValueIfNeeded(token, key));
+					logger.debug(
+							"Looking at potential JWT token: " + key + "=" + obfuscateAttrValueIfNeeded(token, key));
 
 					int i = token.lastIndexOf('.');
 					if (i > 0 && StringTools.countOccurrences(token, ".") == 2) {
@@ -1223,13 +1256,13 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	private String obfuscateAttributeMap(Map<String, Object> attributeMap, String entryDelimiter) {
 		StringJoiner sj = new StringJoiner(entryDelimiter);
-		
+
 		for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
 			String key = entry.getKey();
 			Object value = obfuscateAttrValueIfNeeded(entry.getValue(), key);
 			sj.add(key + "=" + value);
 		}
-		
+
 		return sj.toString();
 	}
 
@@ -1244,11 +1277,11 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return key.equalsIgnoreCase("id_token") || key.equalsIgnoreCase("access_token");
 	}
 
-	
 	@Configurable
 	public void setRemoteAddressResolver(RemoteClientAddressResolver remoteAddressResolver) {
 		this.remoteAddressResolver = remoteAddressResolver;
 	}
+
 	public RemoteClientAddressResolver getRemoteAddressResolver() {
 		if (remoteAddressResolver == null) {
 			remoteAddressResolver = DefaultRemoteClientAddressResolver.getDefaultResolver();
@@ -1260,6 +1293,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	public void setServicesUrl(String servicesUrl) {
 		this.servicesUrl = servicesUrl;
 	}
+
 	@Configurable
 	public void setAddSessionParameter(boolean addSessionParameter) {
 		this.addSessionUrlParameter = addSessionParameter;
@@ -1275,22 +1309,27 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	public void setSystemSessionFactory(PersistenceGmSessionFactory sessionFactory) {
 		this.systemSessionFactory = sessionFactory;
 	}
+
 	@Configurable
 	public void setCreateUsers(boolean createUsers) {
 		this.createUsers = createUsers;
 	}
+
 	@Configurable
 	public void setConfiguration(ShiroAuthenticationConfiguration configuration) {
 		this.configuration = configuration;
 	}
+
 	@Configurable
 	public void setExternalId(String externalId) {
 		this.externalId = externalId;
 	}
+
 	@Configurable
 	public void setHttpClientProvider(HttpClientProvider httpClientProvider) {
 		this.httpClientProvider = httpClientProvider;
 	}
+
 	@Configurable
 	public void setNewUserRoleProvider(NewUserRoleProvider newUserRoleProvider) {
 		this.newUserRoleProvider = newUserRoleProvider;
@@ -1300,6 +1339,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	public void setUserAcceptList(Set<String> userAcceptList) {
 		this.userAcceptList = userAcceptList;
 	}
+
 	@Configurable
 	public void setUserBlockList(Set<String> userBlockList) {
 		this.userBlockList = userBlockList;
@@ -1309,50 +1349,60 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	public void setShowStandardLoginForm(boolean showStandardLoginForm) {
 		this.showStandardLoginForm = showStandardLoginForm;
 	}
+
 	@Configurable
 	public void setShowTextLinks(boolean showTextLinks) {
 		this.showTextLinks = showTextLinks;
 	}
+
 	@Configurable
 	@Required
 	public void setPathIdentifier(String pathIdentifier) {
 		this.pathIdentifier = pathIdentifier;
 	}
+
 	@Required
 	public void setAuthAccessIdSupplier(Supplier<String> authAccessIdSupplier) {
 		this.authAccessIdSupplier = authAccessIdSupplier;
 	}
+
 	@Configurable
 	@Required
 	public void setCookieHandler(CookieHandler cookieHandler) {
 		this.cookieHandler = cookieHandler;
 	}
+
 	@Configurable
 	@Required
 	public void setStaticImagesRelativePath(String staticImagesRelativePath) {
 		this.staticImagesRelativePath = staticImagesRelativePath;
 	}
+
 	@Configurable
 	@Required
 	public void setEvaluator(Evaluator<ServiceRequest> evaluator) {
 		this.evaluator = evaluator;
 	}
+
 	@Configurable
 	@Required
 	public void setExternalIconUrlHelper(ExternalIconUrlHelper externalIconUrlHelper) {
 		this.externalIconUrlHelper = externalIconUrlHelper;
 	}
+
 	@Configurable
 	public void setObfuscateLogOutput(Boolean obfuscateLogOutput) {
 		if (obfuscateLogOutput != null) {
 			this.obfuscateLogOutput = obfuscateLogOutput;
 		}
 	}
+
 	@Configurable
 	@Required
 	public void setModuleClassLoader(ClassLoader classLoader) {
 		this.moduleClassLoader = classLoader;
 	}
+
 	@Configurable
 	@Required
 	public void setShiroTools(ShiroTools shiroTools) {
