@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!--
+<!--
 Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ limitations under the License.
         <version>[5.0,5.1)</version>
     </parent>
     <artifactId>shiro-processing</artifactId>
-    <version>5.0.24</version>
+    <version>5.0.25</version>
     <properties>
         <archetype>library</archetype>
     </properties>
