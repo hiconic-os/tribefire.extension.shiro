@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.braintribe.cfg.Required;
-import com.braintribe.logging.Logger;
 import com.braintribe.model.check.service.CheckRequest;
 import com.braintribe.model.check.service.CheckResult;
 import com.braintribe.model.check.service.CheckResultEntry;
@@ -30,8 +29,6 @@ import com.braintribe.utils.lcd.StringTools;
 
 public class HealthCheckProcessor implements CheckProcessor {
 
-	private static final Logger logger = Logger.getLogger(HealthCheckProcessor.class);
-
 	private Supplier<String> authAccessIdSupplier;
 
 	@Override
@@ -40,14 +37,14 @@ public class HealthCheckProcessor implements CheckProcessor {
 		CheckResult response = CheckResult.T.create();
 
 		List<CheckResultEntry> entries = response.getEntries();
-		
+
 		String authId = authAccessIdSupplier.get();
-		
+
 		CheckResultEntry entry = CheckResultEntry.T.create();
 		entry.setCheckStatus(!StringTools.isBlank(authId) ? CheckStatus.ok : CheckStatus.fail);
 		entry.setName("Authentication");
-		entry.setDetails("Connected to authentication access: "+authId);
-		
+		entry.setDetails("Connected to authentication access: " + authId);
+
 		entries.add(entry);
 
 		return response;
@@ -57,6 +54,5 @@ public class HealthCheckProcessor implements CheckProcessor {
 	public void setAuthAccessIdSupplier(Supplier<String> authAccessIdSupplier) {
 		this.authAccessIdSupplier = authAccessIdSupplier;
 	}
-
 
 }

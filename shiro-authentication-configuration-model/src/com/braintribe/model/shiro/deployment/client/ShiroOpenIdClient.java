@@ -51,4 +51,8 @@ public interface ShiroOpenIdClient extends ShiroClient, ShiroScope, HasRolesFiel
 	void setMetaData(ShiroOpenIdMetaData metaData);
 	ShiroOpenIdMetaData getMetaData();
 
+	/** Value for org.pac4j.oidc.config.OidcConfiguration.includeAccessTokenClaimsInProfile  */
+	Boolean getIncludeAccessTokenClaimsInProfile();
+	void setIncludeAccessTokenClaimsInProfile(Boolean includeAccessTokenClaimsInProfile);
+
 }

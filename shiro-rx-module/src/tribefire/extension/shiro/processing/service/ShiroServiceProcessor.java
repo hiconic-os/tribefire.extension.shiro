@@ -1,0 +1,322 @@
+// ============================================================================
+// Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ============================================================================
+package tribefire.extension.shiro.processing.service;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import com.braintribe.cfg.Configurable;
+import com.braintribe.cfg.Required;
+import com.braintribe.logging.Logger;
+import com.braintribe.model.processing.query.fluent.EntityQueryBuilder;
+import com.braintribe.model.processing.service.impl.AbstractDispatchingServiceProcessor;
+import com.braintribe.model.processing.service.impl.DispatchConfiguration;
+import com.braintribe.model.processing.session.api.persistence.PersistenceGmSession;
+import com.braintribe.model.processing.session.api.persistence.PersistenceGmSessionFactory;
+import com.braintribe.model.query.EntityQuery;
+import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
+import com.braintribe.model.shiro.deployment.ShiroClient;
+import com.braintribe.model.shiro.service.AuthenticationSpecification;
+import com.braintribe.model.shiro.service.EnsureUserByIdToken;
+import com.braintribe.model.shiro.service.EnsuredUser;
+import com.braintribe.model.shiro.service.GetSupportedLogins;
+import com.braintribe.model.shiro.service.ShiroRequest;
+import com.braintribe.model.shiro.service.ShiroResult;
+import com.braintribe.model.shiro.service.SupportedLogins;
+import com.braintribe.model.shiro.service.dist.DeleteSession;
+import com.braintribe.model.shiro.service.dist.GetSession;
+import com.braintribe.model.shiro.service.dist.SerializedSession;
+import com.braintribe.model.shiro.service.dist.UpdateSession;
+import com.braintribe.model.user.Role;
+import com.braintribe.model.user.User;
+import com.braintribe.utils.lcd.StringTools;
+
+import io.jsonwebtoken.Claims;
+import tribefire.extension.shiro.processing.bootstrapping.MulticastSessionDao;
+import tribefire.extension.shiro.processing.util.IdTokenContent;
+import tribefire.extension.shiro.processing.util.ShiroTools;
+import tribefire.extension.shiro.processing.util.ShiroTools.TokenContent;
+
+public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<ShiroRequest, ShiroResult> {
+
+	private final static Logger logger = Logger.getLogger(ShiroServiceProcessor.class);
+
+	private ShiroAuthenticationConfiguration configuration;
+	private String publicServicesUrl;
+	private String pathIdentifier;
+	private String staticImagesRelativePath;
+	private MulticastSessionDao multicastSessionDao = null;
+	private Supplier<String> authAccessIdSupplier;
+	private PersistenceGmSessionFactory sessionFactory;
+	private ShiroTools shiroTools;
+	private boolean obfuscateLogOutput = true;
+
+	// @formatter:off
+	@Required public void setConfiguration(ShiroAuthenticationConfiguration configuration) { this.configuration = configuration; }
+	@Required public void setPublicServicesUrl(String publicServicesUrl) { this.publicServicesUrl = publicServicesUrl; }	
+	@Required public void setPathIdentifier(String pathIdentifier) { this.pathIdentifier = pathIdentifier; }
+	@Required public void setStaticImagesRelativePath(String staticImagesRelativePath) { this.staticImagesRelativePath = staticImagesRelativePath; }
+	@Required public void setMulticastSessionDao(MulticastSessionDao multicastSessionDao) { this.multicastSessionDao = multicastSessionDao; }
+	@Required public void setAuthAccessIdSupplier(Supplier<String> authAccessIdSupplier) { this.authAccessIdSupplier = authAccessIdSupplier; }
+	@Required public void setSessionFactory(PersistenceGmSessionFactory sessionFactory) { this.sessionFactory = sessionFactory; }
+	@Required public void setShiroTools(ShiroTools shiroTools) { this.shiroTools = shiroTools; }
+	// @formatter:on
+
+	@Configurable
+	public void setObfuscateLogOutput(Boolean obfuscateLogOutput) {
+		if (obfuscateLogOutput != null)
+			this.obfuscateLogOutput = obfuscateLogOutput;
+	}
+
+	@Override
+	protected void configureDispatching(DispatchConfiguration<ShiroRequest, ShiroResult> dispatching) {
+		dispatching.register(GetSupportedLogins.T, (c, r) -> getSupportedLogins());
+		dispatching.register(GetSession.T, (c, r) -> getShiroSession(r));
+		dispatching.register(UpdateSession.T, (c, r) -> updateShiroSession(r));
+		dispatching.register(DeleteSession.T, (c, r) -> deleteShiroSession(r));
+		dispatching.register(EnsureUserByIdToken.T, (c, r) -> ensureUserByIdToken(r));
+	}
+
+	private EnsuredUser ensureUserByIdToken(EnsureUserByIdToken request) {
+		EnsuredUser result = EnsuredUser.T.create();
+
+		String idToken = request.getIdToken();
+		IdTokenContent tokenContent = parseIdToken(idToken, request);
+		logger.debug(() -> "Parsed ID token content" + tokenContent + " from: " + obfuscateIfNeeded(idToken));
+
+		User user = ensureUser(tokenContent.username, tokenContent.firstName, tokenContent.lastName, tokenContent.email, tokenContent.roles);
+
+		result.setSuccess(true);
+		result.setEnsuredUser(user);
+		result.setSubject(tokenContent.subject);
+
+		return result;
+	}
+
+	private String obfuscateIfNeeded(String token) {
+		if (obfuscateLogOutput)
+			return StringTools.simpleObfuscatePassword(token);
+		else
+			return token;
+	}
+
+	private IdTokenContent parseIdToken(String idToken, EnsureUserByIdToken request) {
+		TokenContent tokenWithoutValidation = shiroTools.parseTokenWithoutValidation(idToken, false);
+		Claims body = tokenWithoutValidation.body();
+
+		IdTokenContent result = new IdTokenContent();
+
+		Set<String> audience = body.getAudience();
+		result.audience = audience != null ? audience.stream().collect(Collectors.joining(",")) : null;
+		result.expiration = body.getExpiration();
+		result.issuedAt = body.getIssuedAt();
+		result.issuer = body.getIssuer();
+
+		result.subject = body.getSubject();
+		result.roles = new HashSet<>();
+		String rolesClaimId = request.getRolesClaim();
+		if (!StringTools.isBlank(rolesClaimId)) {
+			Object rolesObject = body.get(rolesClaimId);
+			if (rolesObject instanceof Collection) {
+				Collection<String> r = (Collection<String>) rolesObject;
+				result.roles.addAll(r);
+			}
+		}
+		result.roles.add("$" + result.subject);
+		result.email = getClaim(body, request.getEmailClaim(), null);
+		result.username = getClaim(body, request.getUsernameClaim(), result.subject);
+		result.firstName = getClaim(body, request.getFirstNameClaim(), null);
+		result.lastName = getClaim(body, request.getLastNameClaim(), null);
+		result.fullName = getClaim(body, request.getNameClaim(), null);
+		if (result.firstName == null && result.lastName == null && !StringTools.isBlank(result.fullName)) {
+			result.fullName = result.fullName.trim();
+			int idx = result.fullName.indexOf(' ');
+			if (idx == -1) {
+				result.lastName = result.fullName;
+			} else {
+				result.firstName = result.fullName.substring(0, idx).trim();
+				result.lastName = result.fullName.substring(idx + 1).trim();
+			}
+		}
+
+		return result;
+	}
+
+	private User ensureUser(String username, String firstName, String lastName, String email, Set<String> roles) {
+
+		PersistenceGmSession authSession = authSession();
+		EntityQuery query = EntityQueryBuilder.from(User.T).where().property(User.name).eq(username).done();
+		User result = null;
+		User existingUser = authSession.query().entities(query).first();
+		if (existingUser == null) {
+
+			logger.debug(() -> "User " + username + " does not yet exist but we will create it now.");
+
+			User newUser = authSession.create(User.T);
+			newUser.setName(username);
+			newUser.setFirstName(firstName);
+			newUser.setLastName(lastName);
+			newUser.setEmail(email);
+			if (roles != null) {
+				Set<Role> roleObjects = ensureRoles(authSession, roles);
+				newUser.getRoles().addAll(roleObjects);
+			}
+			result = newUser;
+
+		} else {
+
+			setIfChanged(existingUser.getFirstName(), firstName, existingUser::setFirstName);
+			setIfChanged(existingUser.getLastName(), lastName, existingUser::setLastName);
+			setIfChanged(existingUser.getEmail(), email, existingUser::setEmail);
+
+			Set<Role> roleObjects = ensureRoles(authSession, roles);
+			if (roleObjects != null) {
+				Set<Role> existingRoles = existingUser.getRoles();
+				if (!roleObjects.equals(existingRoles)) {
+					existingRoles.clear();
+					existingRoles.addAll(roleObjects);
+				}
+			}
+
+			result = existingUser;
+		}
+
+		authSession.commit();
+
+		return result;
+	}
+
+	private Set<Role> ensureRoles(PersistenceGmSession authSession, Collection<String> roles) {
+		if (roles == null || roles.isEmpty()) {
+			return null;
+		}
+		Set<String> remainingRoles = new HashSet<>(roles);
+
+		Set<Role> allRoles = new HashSet<>();
+
+		EntityQuery roleQuery = EntityQueryBuilder.from(Role.T).where().property(Role.name).in(remainingRoles).done();
+		List<Role> roleList = authSession.query().entities(roleQuery).list();
+		if (roleList != null) {
+			for (Role role : roleList) {
+				remainingRoles.remove(role.getName());
+				allRoles.add(role);
+			}
+		}
+		for (String newRole : remainingRoles) {
+			Role role = authSession.create(Role.T);
+			role.setName(newRole);
+			allRoles.add(role);
+		}
+		authSession.commit();
+		return allRoles;
+	}
+
+	private void setIfChanged(String existingValue, String newValue, Consumer<String> setter) {
+		if (existingValue == null && newValue == null) {
+			return;
+		}
+		if ((existingValue == null && newValue != null) || (existingValue != null && newValue == null)) {
+			setter.accept(newValue);
+			return;
+		}
+		if (existingValue.equals(newValue)) {
+			setter.accept(newValue);
+		}
+	}
+
+	private PersistenceGmSession authSession() {
+		return sessionFactory.newSession(authAccessIdSupplier.get());
+	}
+
+	private String getClaim(Claims body, String key, String defaultValue) {
+		if (!StringTools.isBlank(key)) {
+			String mapValue = (String) body.get(key);
+			if (mapValue != null) {
+				return mapValue;
+			}
+		}
+		return defaultValue;
+	}
+
+	private SerializedSession getShiroSession(GetSession request) {
+		SerializedSession result = SerializedSession.T.create();
+
+		String shiroSessionId = request.getShiroSessionId();
+
+		String serSession = multicastSessionDao.getLocalSessionSerialized(shiroSessionId);
+		if (serSession != null) {
+			result.setSerializedSession(serSession);
+		}
+		result.setShiroSessionId(shiroSessionId);
+
+		logger.debug(() -> "Received a GetSession with ID: " + shiroSessionId + ", exists: " + (serSession != null));
+
+		return result;
+	}
+
+	private ShiroResult updateShiroSession(UpdateSession request) {
+		ShiroResult result = ShiroResult.T.create();
+
+		String shiroSessionId = request.getShiroSessionId();
+		String serializedSession = request.getSerializedSession();
+		boolean updated = multicastSessionDao.updateIfExists(shiroSessionId, serializedSession);
+
+		logger.debug(() -> "Received an UpdateSession with ID: " + shiroSessionId + ", updated: " + updated);
+
+		result.setSuccess(updated);
+
+		return result;
+	}
+
+	private ShiroResult deleteShiroSession(DeleteSession request) {
+		ShiroResult result = ShiroResult.T.create();
+
+		String shiroSessionId = request.getShiroSessionId();
+		boolean deleted = multicastSessionDao.deleteIfExists(shiroSessionId);
+
+		logger.debug(() -> "Received an DeleteSession with ID: " + shiroSessionId + ", deleted: " + deleted);
+
+		result.setSuccess(deleted);
+
+		return result;
+	}
+
+	private SupportedLogins getSupportedLogins() {
+		SupportedLogins result = SupportedLogins.T.create();
+
+		for (ShiroClient client : configuration.getClients()) {
+			String clientName = client.getName();
+			String authUrl = publicServicesUrl + "/" + pathIdentifier + "/auth/" + clientName.toLowerCase();
+			// TODO support shiro static images
+			String imageUrl = publicServicesUrl + staticImagesRelativePath + clientName.toLowerCase() + ".png";
+
+			AuthenticationSpecification spec = AuthenticationSpecification.T.create();
+			spec.setName(clientName);
+			spec.setAuthenticationUrl(authUrl);
+			spec.setImageUrl(imageUrl);
+
+			result.getLogins().add(spec);
+		}
+
+		return result;
+	}
+
+}

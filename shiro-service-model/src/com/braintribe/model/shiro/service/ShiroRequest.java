@@ -22,7 +22,7 @@ import com.braintribe.model.generic.reflection.EntityTypes;
 import com.braintribe.model.service.api.AuthorizedRequest;
 import com.braintribe.model.service.api.ServiceRequest;
 
-public interface ShiroRequest extends ServiceRequest, AuthorizedRequest {
+public interface ShiroRequest extends AuthorizedRequest {
 
 	EntityType<ShiroRequest> T = EntityTypes.T(ShiroRequest.class);
 

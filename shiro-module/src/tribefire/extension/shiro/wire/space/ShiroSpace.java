@@ -38,24 +38,6 @@ import tribefire.module.wire.contract.TribefireWebPlatformContract;
 @Managed
 public class ShiroSpace implements WireSpace {
 
-	@Import
-	private TribefireWebPlatformContract tfPlatform;
-
-	@Import
-	private ModuleResourcesContract moduleResources;
-
-	@Import
-	private ModuleReflectionContract reflection;
-
-	@Managed
-	public Bootstrapping bootstrapping() {
-		Bootstrapping bean = new Bootstrapping();
-		bean.setEnvironmentLoaderListener(environmentLoader());
-		bean.setServletContext(tfPlatform.servlets().context());
-		bean.setModuleClassLoader(reflection.moduleClassLoader());
-		return bean;
-	}
-
 	@Managed
 	public ShiroProxyFilter shiroProxyFilter() {
 		ShiroProxyFilter bean = new ShiroProxyFilter();
@@ -66,43 +48,6 @@ public class ShiroSpace implements WireSpace {
 	@Managed
 	private ShiroFilter shiroFilter() {
 		ShiroFilter bean = new ShiroFilter();
-		return bean;
-	}
-
-	@Managed
-	private CustomEnvironmentLoader environmentLoader() {
-		CustomEnvironmentLoader bean = new CustomEnvironmentLoader();
-		bean.setIniEnvironment(iniEnvironment());
-		return bean;
-	}
-
-	@Managed
-	private StringBasedIniEnvironment iniEnvironment() {
-		StringBasedIniEnvironment bean = new StringBasedIniEnvironment();
-		bean.setIniConfigSupplier(iniFactory());
-		return bean;
-	}
-
-	@Managed
-	private DefaultSecurityManager securityManager() {
-		DefaultSecurityManager bean = new DefaultSecurityManager();
-		return bean;
-	}
-
-	@Managed
-	private InMemorySessionDao inMemorySessionDao() {
-		InMemorySessionDao bean = new InMemorySessionDao();
-		return bean;
-	}
-
-	@Managed
-	public ShiroIniFactory iniFactory() {
-		ShiroIniFactory bean = new ShiroIniFactory();
-
-		File iniFile = moduleResources.resource("shiro.ini.vm").asFile();
-		String template = FileTools.readStringFromFile(iniFile, "UTF-8");
-
-		bean.setIniTemplate(template);
 		return bean;
 	}
 

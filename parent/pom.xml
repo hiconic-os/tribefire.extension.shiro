@@ -22,22 +22,29 @@ limitations under the License.
         <java.version>21</java.version>
         <V.tribefire.extension.shiro>[5.0,5.1)</V.tribefire.extension.shiro>
         <V.com.braintribe.common>[2.0,2.1)</V.com.braintribe.common>
+        <V.com.braintribe.servlet>[2.0,2.1)</V.com.braintribe.servlet>
+        <V.com.braintribe.codec>[2.0,2.1)</V.com.braintribe.codec>
         <V.com.braintribe.gm>[2.0,2.1)</V.com.braintribe.gm>
         <V.com.braintribe.velocity>[2.0,2.1)</V.com.braintribe.velocity>
         <V.com.braintribe.wire>[2.0,2.1)</V.com.braintribe.wire>
         <V.tribefire.cortex>[3.0,3.1)</V.tribefire.cortex>
         <V.tribefire.setup.classic.env>[3.0,3.1)</V.tribefire.setup.classic.env>
         <V.tribefire.extension.jdbcdriver>[3.0,3.1)</V.tribefire.extension.jdbcdriver>
+        <V.hiconic.platform.reflex>[1.0,1.1)</V.hiconic.platform.reflex>
         <V.com.fasterxml.jackson.core>2.18.2</V.com.fasterxml.jackson.core>
         <V.commons-beanutils>1.11.0</V.commons-beanutils>
         <V.io.buji>7.0.0</V.io.buji>
+        <V.rx.io.buji>9.0.0</V.rx.io.buji>
         <V.io.jsonwebtoken>0.12.6</V.io.jsonwebtoken>
+        <V.jakarta.servlet>6.0.0</V.jakarta.servlet>
         <V.javax.servlet>3.1.0</V.javax.servlet>
         <V.org.nokogiri.nekohtml>1.9.22.noko2</V.org.nokogiri.nekohtml>
         <V.org.apache.httpcomponents>4.5.13</V.org.apache.httpcomponents>
         <V.org.pac4j_pac4j-oidc>5.7.7</V.org.pac4j_pac4j-oidc>
         <V.org.pac4j_pac4j-oauth>5.7.7</V.org.pac4j_pac4j-oauth>
         <V.org.pac4j_pac4j-openid>4.5.8</V.org.pac4j_pac4j-openid>
+        <V.rx.org.pac4j_pac4j-oidc>6.0.5</V.rx.org.pac4j_pac4j-oidc>
+        <V.rx.org.pac4j_pac4j-oauth>6.0.5</V.rx.org.pac4j_pac4j-oauth>
         <V.org.apache.shiro>1.13.0</V.org.apache.shiro>
         <V.net.minidev>2.4.9</V.net.minidev>
         <V.com.nimbusds>10.1</V.com.nimbusds>

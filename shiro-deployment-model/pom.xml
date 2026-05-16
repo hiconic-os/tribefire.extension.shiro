@@ -1,4 +1,4 @@
-<!--
+<?xml version="1.0" encoding="UTF-8"?><!--
 Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,12 @@ limitations under the License.
             <groupId>tribefire.cortex</groupId>
             <artifactId>extension-deployment-model</artifactId>
             <version>${V.tribefire.cortex}</version>
+        </dependency>
+        <dependency>
+            <groupId>tribefire.extension.shiro</groupId>
+            <artifactId>shiro-authentication-configuration-model</artifactId>
+            <version>${V.tribefire.extension.shiro}</version>
+            <?tag asset ?>
         </dependency>
     </dependencies>
 </project>

@@ -44,11 +44,6 @@ limitations under the License.
             <version>${V.com.braintribe.gm}</version>
         </dependency>
         <dependency>
-            <groupId>tribefire.extension.shiro</groupId>
-            <artifactId>shiro-deployment-model</artifactId>
-            <version>${V.tribefire.extension.shiro}</version>
-        </dependency>
-        <dependency>
             <groupId>com.braintribe.gm</groupId>
             <artifactId>user-model</artifactId>
             <version>${V.com.braintribe.gm}</version>

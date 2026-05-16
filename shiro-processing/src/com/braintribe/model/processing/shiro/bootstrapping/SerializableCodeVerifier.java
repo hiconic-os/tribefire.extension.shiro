@@ -18,7 +18,6 @@ package com.braintribe.model.processing.shiro.bootstrapping;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Date;
 
@@ -26,7 +25,7 @@ import com.braintribe.exception.Exceptions;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
 
-public class SerializableCodeVerifier extends CodeVerifier implements Serializable {
+public class SerializableCodeVerifier extends CodeVerifier {
 
 	private static final long serialVersionUID = -8223681020765931679L;
 
@@ -38,7 +37,7 @@ public class SerializableCodeVerifier extends CodeVerifier implements Serializab
 		return new SerializableCodeVerifier(source.getValue());
 	}
 
-	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+	private void readObject(ObjectInputStream in) throws IOException {
 		int len = in.readInt();
 		byte[] valueBytes = new byte[len];
 		in.readFully(valueBytes);

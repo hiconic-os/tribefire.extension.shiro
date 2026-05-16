@@ -19,13 +19,7 @@ public interface ShiroConstants {
 
 	String CARTRIDGE_GROUPID = "tribefire.extension.shiro";
 
-	String MODULE_NAME = "shiro-module";
-
-	String CARTRIDGE_EXTERNALID = CARTRIDGE_GROUPID + ".shiro-cartridge";
-
-	String CARTRIDGE_GLOBAL_ID = "cartridge:" + CARTRIDGE_EXTERNALID;
-
-	String MODULE_GLOBAL_ID = "module://" + CARTRIDGE_GROUPID + ":" + MODULE_NAME;
+	String MODULE_GLOBAL_ID = "module://" + CARTRIDGE_GROUPID + ":" + "shiro-module";
 
 	String DEPLOYMENT_MODEL_QUALIFIEDNAME = CARTRIDGE_GROUPID + ":shiro-deployment-model";
 	String SERVICE_MODEL_QUALIFIEDNAME = CARTRIDGE_GROUPID + ":shiro-service-model";

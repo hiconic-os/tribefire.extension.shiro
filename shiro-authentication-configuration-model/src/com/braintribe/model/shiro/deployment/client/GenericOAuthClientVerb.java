@@ -19,7 +19,7 @@ import com.braintribe.model.generic.base.EnumBase;
 import com.braintribe.model.generic.reflection.EnumType;
 import com.braintribe.model.generic.reflection.EnumTypes;
 
-public enum GenericOAuthClientVerb implements EnumBase {
+public enum GenericOAuthClientVerb implements EnumBase<GenericOAuthClientVerb> {
 
 	GET,
 	POST,
@@ -30,10 +30,10 @@ public enum GenericOAuthClientVerb implements EnumBase {
 	TRACE,
 	PATCH;
 
-	public static final EnumType T = EnumTypes.T(GenericOAuthClientVerb.class);
+	public static final EnumType<GenericOAuthClientVerb> T = EnumTypes.T(GenericOAuthClientVerb.class);
 
 	@Override
-	public EnumType type() {
+	public EnumType<GenericOAuthClientVerb> type() {
 		return T;
 	}
 

@@ -75,7 +75,7 @@ public class ShiroServiceProcessorTest {
 
 		proc.setShiroTools(new ShiroTools()); // But why?
 
-		EnsuredUser result = proc.ensureUserByIdToken(null, request);
+		EnsuredUser result = proc.ensureUserByIdToken(request);
 		assertThat(result).isNotNull();
 		assertThat(result.getSuccess()).isTrue();
 		User ensuredUser = result.getEnsuredUser();

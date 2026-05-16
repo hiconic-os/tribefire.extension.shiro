@@ -29,12 +29,10 @@ import com.braintribe.cfg.Required;
 import com.braintribe.logging.Logger;
 import com.braintribe.model.processing.bootstrapping.TribefireRuntime;
 import com.braintribe.model.processing.query.fluent.EntityQueryBuilder;
-import com.braintribe.model.processing.service.api.ServiceRequestContext;
 import com.braintribe.model.processing.service.impl.AbstractDispatchingServiceProcessor;
 import com.braintribe.model.processing.service.impl.DispatchConfiguration;
 import com.braintribe.model.processing.session.api.persistence.PersistenceGmSession;
 import com.braintribe.model.processing.session.api.persistence.PersistenceGmSessionFactory;
-import com.braintribe.model.processing.session.api.persistence.SessionFactoryBasedSessionProvider;
 import com.braintribe.model.processing.shiro.ShiroConstants;
 import com.braintribe.model.processing.shiro.bootstrapping.MulticastSessionDao;
 import com.braintribe.model.processing.shiro.util.IdTokenContent;
@@ -75,14 +73,14 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 
 	@Override
 	protected void configureDispatching(DispatchConfiguration<ShiroRequest, ShiroResult> dispatching) {
-		dispatching.register(GetSupportedLogins.T, this::getSupportedLogins);
-		dispatching.register(GetSession.T, this::getShiroSession);
-		dispatching.register(UpdateSession.T, this::updateShiroSession);
-		dispatching.register(DeleteSession.T, this::deleteShiroSession);
-		dispatching.register(EnsureUserByIdToken.T, this::ensureUserByIdToken);
+		dispatching.register(GetSupportedLogins.T, (c, r) -> getSupportedLogins());
+		dispatching.register(GetSession.T, (c, r) -> getShiroSession(r));
+		dispatching.register(UpdateSession.T, (c, r) -> updateShiroSession(r));
+		dispatching.register(DeleteSession.T, (c, r) -> deleteShiroSession(r));
+		dispatching.register(EnsureUserByIdToken.T, (c, r) -> ensureUserByIdToken(r));
 	}
 
-	protected EnsuredUser ensureUserByIdToken(ServiceRequestContext context, EnsureUserByIdToken request) {
+	protected EnsuredUser ensureUserByIdToken(EnsureUserByIdToken request) {
 		EnsuredUser result = EnsuredUser.T.create();
 
 		String idToken = request.getIdToken();
@@ -105,7 +103,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 			return token;
 	}
 
-	protected IdTokenContent parseIdToken(String idToken, EnsureUserByIdToken request) {
+	private IdTokenContent parseIdToken(String idToken, EnsureUserByIdToken request) {
 		TokenContent tokenWithoutValidation = shiroTools.parseTokenWithoutValidation(idToken, false);
 		Claims body = tokenWithoutValidation.body();
 
@@ -230,10 +228,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 	}
 
 	private PersistenceGmSession authSession() {
-		SessionFactoryBasedSessionProvider bean = new SessionFactoryBasedSessionProvider();
-		bean.setAccessId(authAccessIdSupplier.get());
-		bean.setPersistenceGmSessionFactory(this.sessionFactory);
-		return bean.get();
+		return sessionFactory.newSession(authAccessIdSupplier.get());
 	}
 
 	private String getClaim(Claims body, String key, String defaultValue) {
@@ -246,8 +241,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		return defaultValue;
 	}
 
-	private SerializedSession getShiroSession(ServiceRequestContext context, GetSession request) {
-
+	private SerializedSession getShiroSession(GetSession request) {
 		SerializedSession result = SerializedSession.T.create();
 
 		String shiroSessionId = request.getShiroSessionId();
@@ -263,7 +257,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		return result;
 	}
 
-	public ShiroResult updateShiroSession(ServiceRequestContext context, UpdateSession request) {
+	private ShiroResult updateShiroSession(UpdateSession request) {
 		ShiroResult result = ShiroResult.T.create();
 
 		String shiroSessionId = request.getShiroSessionId();
@@ -277,7 +271,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		return result;
 	}
 
-	public ShiroResult deleteShiroSession(ServiceRequestContext context, DeleteSession request) {
+	private ShiroResult deleteShiroSession(DeleteSession request) {
 		ShiroResult result = ShiroResult.T.create();
 
 		String shiroSessionId = request.getShiroSessionId();
@@ -290,8 +284,7 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		return result;
 	}
 
-	public SupportedLogins getSupportedLogins(ServiceRequestContext context, GetSupportedLogins request) {
-
+	private SupportedLogins getSupportedLogins() {
 		SupportedLogins result = SupportedLogins.T.create();
 
 		String tfs = TribefireRuntime.getPublicServicesUrl();
@@ -321,45 +314,37 @@ public class ShiroServiceProcessor extends AbstractDispatchingServiceProcessor<S
 		logger.debug(() -> ShiroServiceProcessor.class.getSimpleName() + " undeployed.");
 	}
 
-	@Configurable
 	@Required
 	public void setConfiguration(ShiroAuthenticationConfiguration configuration) {
 		this.configuration = configuration;
 	}
-	@Configurable
 	@Required
 	public void setPathIdentifier(String pathIdentifier) {
 		this.pathIdentifier = pathIdentifier;
 	}
-	@Configurable
 	@Required
 	public void setStaticImagesRelativePath(String staticImagesRelativePath) {
 		this.staticImagesRelativePath = staticImagesRelativePath;
 	}
-	@Configurable
 	@Required
 	public void setMulticastSessionDao(MulticastSessionDao multicastSessionDao) {
 		this.multicastSessionDao = multicastSessionDao;
 	}
-	@Configurable
 	@Required
 	public void setAuthAccessIdSupplier(Supplier<String> authAccessIdSupplier) {
 		this.authAccessIdSupplier = authAccessIdSupplier;
 	}
-	@Configurable
 	@Required
 	public void setSessionFactory(PersistenceGmSessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
-	@Configurable
 	@Required
 	public void setShiroTools(ShiroTools shiroTools) {
 		this.shiroTools = shiroTools;
 	}
 	@Configurable
 	public void setObfuscateLogOutput(Boolean obfuscateLogOutput) {
-		if (obfuscateLogOutput != null) {
+		if (obfuscateLogOutput != null)
 			this.obfuscateLogOutput = obfuscateLogOutput;
-		}
 	}
 }

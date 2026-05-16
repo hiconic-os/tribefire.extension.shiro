@@ -1,6 +1,4 @@
 // ============================================================================
-// Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -13,21 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ============================================================================
-package com.braintribe.model.shiro.deployment.client;
+package tribefire.extension.shiro.templates.wire.space;
 
-import com.braintribe.model.generic.base.EnumBase;
-import com.braintribe.model.generic.reflection.EnumType;
-import com.braintribe.model.generic.reflection.EnumTypes;
 
-public enum OAuth20ClientAuthenticationMethod implements EnumBase {
+import org.apache.shiro.web.servlet.ShiroFilter;
 
-	basicAuth,
-	requestBody;
+import com.braintribe.wire.api.annotation.Managed;
+import com.braintribe.wire.api.space.WireSpace;
 
-	public final static EnumType T = EnumTypes.T(OAuth20ClientAuthenticationMethod.class);
+import tribefire.extension.shiro.processing.bootstrapping.ShiroProxyFilter;
 
-	@Override
-	public EnumType type() {
-		return T;
+@Managed
+public class RxShiroSpace implements WireSpace {
+
+	@Managed
+	public ShiroProxyFilter shiroProxyFilter() {
+		ShiroProxyFilter bean = new ShiroProxyFilter();
+		bean.setDelegateSupplier(this::shiroFilter);
+		return bean;
 	}
+
+	@Managed
+	private ShiroFilter shiroFilter() {
+		ShiroFilter bean = new ShiroFilter();
+		return bean;
+	}
+
 }

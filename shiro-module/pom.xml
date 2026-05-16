@@ -1,4 +1,4 @@
-<!--
+<?xml version="1.0" encoding="UTF-8"?><!--
 Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,15 +49,15 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>tribefire.extension.shiro</groupId>
-            <artifactId>shiro-deployment-model</artifactId>
+            <artifactId>shiro-service-model</artifactId>
             <version>${V.tribefire.extension.shiro}</version>
             <?tag asset?>
         </dependency>
         <dependency>
             <groupId>tribefire.extension.shiro</groupId>
-            <artifactId>shiro-service-model</artifactId>
+            <artifactId>shiro-deployment-model</artifactId>
             <version>${V.tribefire.extension.shiro}</version>
-            <?tag asset?>
+            <?tag asset ?>
         </dependency>
     </dependencies>
 </project>

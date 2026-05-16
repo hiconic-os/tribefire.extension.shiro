@@ -98,7 +98,7 @@ public class ShiroTemplatesSpace implements WireSpace, ShiroTemplatesContract {
 			bean.getClients().add(authenticationInstagram(context));
 		}
 
-		bean.setDefaultRedirectUrl(context.getPublicServicesUrl());
+		bean.setPublicServicesUrl(context.getPublicServicesUrl());
 		bean.setCallbackUrl(context.getCallbackUrl());
 		bean.setDefaultRedirectUrl(context.getRedirectUrl());
 		bean.setUnauthorizedUrl(context.getUnauthorizedUrl());

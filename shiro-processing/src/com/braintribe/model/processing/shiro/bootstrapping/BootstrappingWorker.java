@@ -29,7 +29,6 @@ import com.braintribe.model.processing.shiro.bootstrapping.ini.ShiroIniFactory;
 import com.braintribe.model.processing.worker.api.Worker;
 import com.braintribe.model.processing.worker.api.WorkerContext;
 import com.braintribe.model.processing.worker.api.WorkerException;
-import com.braintribe.model.shiro.deployment.Login;
 import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
 import com.braintribe.utils.lcd.StringTools;
 
@@ -47,7 +46,7 @@ public class BootstrappingWorker implements Worker {
 	private ShiroAuthenticationConfiguration configuration;
 	private Bootstrapping bootstrapping;
 	private Supplier<PersistenceGmSession> cortexSessionProvider;
-	private Login login;
+	private String loginPathIdentifier;
 
 	@Override
 	public GenericEntity getWorkerIdentification() {
@@ -73,7 +72,7 @@ public class BootstrappingWorker implements Worker {
 
 				logger.debug(() -> "Computing the callback URL");
 
-				String callbackUrl = publicServicesUrl + "component/" + login.getPathIdentifier() + "/auth/callback";
+				String callbackUrl = publicServicesUrl + "component/" + loginPathIdentifier + "/auth/callback";
 				sessionConfig.setCallbackUrl(callbackUrl);
 				session.commit();
 
@@ -84,7 +83,7 @@ public class BootstrappingWorker implements Worker {
 
 				logger.debug(() -> "Computing the unauthorized URL");
 
-				String unauthorizedUrl = publicServicesUrl + "component/" + login.getPathIdentifier();
+				String unauthorizedUrl = publicServicesUrl + "component/" + loginPathIdentifier;
 				sessionConfig.setUnauthorizedUrl(unauthorizedUrl);
 				session.commit();
 
@@ -98,9 +97,9 @@ public class BootstrappingWorker implements Worker {
 
 		shiroIniFactory.setConfiguration(configuration);
 
-		logger.debug(() -> "Setting the path identifier in the ShiroIni Factory: " + login.getPathIdentifier());
+		logger.debug(() -> "Setting the path identifier in the ShiroIni Factory: " + loginPathIdentifier);
 
-		shiroIniFactory.setLoginServletPath(login.getPathIdentifier());
+		shiroIniFactory.setLoginServletPath(loginPathIdentifier);
 
 		logger.debug(() -> "Initiating the bootstrapping of Shiro");
 
@@ -150,8 +149,8 @@ public class BootstrappingWorker implements Worker {
 	public void setCortexSessionProvider(Supplier<PersistenceGmSession> cortexSessionProvider) {
 		this.cortexSessionProvider = cortexSessionProvider;
 	}
-	public void setLogin(Login login) {
-		this.login = login;
+	public void setLoginPathIdentifier(String loginPathIdentifier) {
+		this.loginPathIdentifier = loginPathIdentifier;
 	}
 
 }

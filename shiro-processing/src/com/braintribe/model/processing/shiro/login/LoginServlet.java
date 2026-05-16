@@ -38,7 +38,6 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
@@ -135,8 +134,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	public final static String TRIBEFIRE_RUNTIME_OFFER_STAYSIGNED = "TRIBEFIRE_RUNTIME_OFFER_STAYSIGNED";
 
-	private static final Pattern PATTERN_FORMAT_PLACEHOLDER_PATTERN = Pattern.compile("\\{.*?\\}");
-
 	private static final String signinPageTemplateLocation = "com/braintribe/model/processing/shiro/templates/login.html.vm";
 
 	private Codec<Map<String, String>, String> urlParamCodec;
@@ -147,7 +144,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	private PersistenceGmSessionFactory systemSessionFactory;
 	private ShiroAuthenticationConfiguration configuration;
-	private String externalId;
 
 	private HttpClientProvider httpClientProvider;
 
@@ -174,7 +170,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 	private boolean obfuscateLogOutput = true;
 
-	private ClassLoader moduleClassLoader;
 	private ShiroTools shiroTools;
 
 	@Override
@@ -233,7 +228,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						final String username;
 						ShiroClient shiroClient = getShiroClient(cp);
 						if (shiroClient != null) {
-							username = getUsername(shiroClient, cp, attributeMap);
+							username = getUsername(shiroClient, attributeMap);
 						} else {
 							username = null;
 						}
@@ -244,7 +239,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 						SecurityUtils.getSecurityManager().logout(user);
 
 						if (username != null && acceptUsername(username)
-								&& ensureUser(username, shiroClient, cp, attributeMap)) {
+								&& ensureUser(username, shiroClient, attributeMap)) {
 
 							logger.debug(() -> "Authenticating user: " + username);
 
@@ -455,8 +450,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return new Pair<>("", "/tribefire-services");
 	}
 
-	private boolean ensureUser(String username, ShiroClient shiroClient, UserProfile cp,
-			Map<String, Object> attributeMap) {
+	private boolean ensureUser(String username, ShiroClient shiroClient, Map<String, Object> attributeMap) {
 
 		PersistenceGmSession authSession = authSession();
 		EntityQuery query = EntityQueryBuilder.from(User.T).where().property(User.name).eq(username).done();
@@ -473,15 +467,15 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 
 			User newUser = authSession.create(User.T);
 			newUser.setName(username);
-			enrichUser(authSession, shiroClient, newUser, cp, attributeMap);
+			enrichUser(authSession, shiroClient, newUser, attributeMap);
 
-			handleUserRoles(authSession, shiroClient, newUser, cp, attributeMap, true);
+			handleUserRoles(authSession, shiroClient, newUser, attributeMap, true);
 
 		} else {
 
-			checkExistingUserUpdates(authSession, shiroClient, existingUser, cp, attributeMap);
+			checkExistingUserUpdates(authSession, shiroClient, existingUser, attributeMap);
 
-			handleUserRoles(authSession, shiroClient, existingUser, cp, attributeMap, false);
+			handleUserRoles(authSession, shiroClient, existingUser, attributeMap, false);
 
 		}
 
@@ -490,8 +484,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return true;
 	}
 
-	private void handleUserRoles(PersistenceGmSession authSession, ShiroClient shiroClient, User user, UserProfile cp,
-			Map<String, Object> attributeMap, boolean isNewUser) {
+	private void handleUserRoles(PersistenceGmSession authSession, ShiroClient shiroClient, User user, Map<String, Object> attributeMap, boolean isNewUser) {
 
 		logger.debug(() -> "Starting to handle roles for user " + user.getName());
 
@@ -659,8 +652,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return rolesCollection;
 	}
 
-	private void enrichUser(PersistenceGmSession session, ShiroClient shiroClient, User user, UserProfile cp,
-			Map<String, Object> attributeMap) {
+	private void enrichUser(PersistenceGmSession session, ShiroClient shiroClient, User user, Map<String, Object> attributeMap) {
 
 		String pattern = shiroClient.getUserMailField();
 		if (!StringTools.isBlank(pattern)) {
@@ -679,7 +671,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 			user.setLastName(StringTools.patternFormat(pattern, attributeMap));
 		}
 
-		String userIconUrl = getUserIconUrl(shiroClient, user, attributeMap);
+		String userIconUrl = getUserIconUrl(shiroClient, attributeMap);
 
 		if (!StringTools.isBlank(userIconUrl)) {
 
@@ -725,7 +717,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		}
 	}
 
-	protected String getUserIconUrl(ShiroClient shiroClient, User user, Map<String, Object> map) {
+	protected String getUserIconUrl(ShiroClient shiroClient, Map<String, Object> map) {
 		String iconUrl = shiroClient.getUserIconUrl();
 		if (!StringTools.isBlank(iconUrl)) {
 			return iconUrl;
@@ -784,8 +776,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		}
 	}
 
-	private void checkExistingUserUpdates(PersistenceGmSession session, ShiroClient shiroClient, User user,
-			UserProfile cp, Map<String, Object> attributeMap) {
+	private void checkExistingUserUpdates(PersistenceGmSession session, ShiroClient shiroClient, User user, Map<String, Object> attributeMap) {
 
 		String pattern = shiroClient.getUserMailField();
 		if (!StringTools.isBlank(pattern)) {
@@ -900,7 +891,7 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		return buf.toString();
 	}
 
-	private String getUsername(ShiroClient shiroClient, UserProfile cp, Map<String, Object> attributeMap) {
+	private String getUsername(ShiroClient shiroClient, Map<String, Object> attributeMap) {
 
 		List<String> usernamePatterns = shiroClient.getUsernamePatterns();
 		String username = null;
@@ -1321,11 +1312,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 	}
 
 	@Configurable
-	public void setExternalId(String externalId) {
-		this.externalId = externalId;
-	}
-
-	@Configurable
 	public void setHttpClientProvider(HttpClientProvider httpClientProvider) {
 		this.httpClientProvider = httpClientProvider;
 	}
@@ -1395,12 +1381,6 @@ public class LoginServlet extends BasicTemplateBasedServlet {
 		if (obfuscateLogOutput != null) {
 			this.obfuscateLogOutput = obfuscateLogOutput;
 		}
-	}
-
-	@Configurable
-	@Required
-	public void setModuleClassLoader(ClassLoader classLoader) {
-		this.moduleClassLoader = classLoader;
 	}
 
 	@Configurable

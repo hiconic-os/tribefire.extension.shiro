@@ -15,17 +15,25 @@
 // ============================================================================
 package tribefire.extension.shiro.wire.space;
 
+import java.io.File;
 import java.util.Set;
+
+import org.apache.shiro.mgt.DefaultSecurityManager;
 
 import com.braintribe.logging.Logger;
 import com.braintribe.model.processing.bootstrapping.TribefireRuntime;
 import com.braintribe.model.processing.deployment.api.ExpertContext;
 import com.braintribe.model.processing.shiro.ShiroConstants;
+import com.braintribe.model.processing.shiro.bootstrapping.Bootstrapping;
 import com.braintribe.model.processing.shiro.bootstrapping.BootstrappingWorker;
+import com.braintribe.model.processing.shiro.bootstrapping.CustomEnvironmentLoader;
 import com.braintribe.model.processing.shiro.bootstrapping.FixedNewUserRolesProvider;
+import com.braintribe.model.processing.shiro.bootstrapping.InMemorySessionDao;
 import com.braintribe.model.processing.shiro.bootstrapping.MappedNewUserRolesProvider;
 import com.braintribe.model.processing.shiro.bootstrapping.MulticastSessionDao;
 import com.braintribe.model.processing.shiro.bootstrapping.NodeSessionIdGenerator;
+import com.braintribe.model.processing.shiro.bootstrapping.StringBasedIniEnvironment;
+import com.braintribe.model.processing.shiro.bootstrapping.ini.ShiroIniFactory;
 import com.braintribe.model.processing.shiro.login.LoginServlet;
 import com.braintribe.model.processing.shiro.login.SessionValidatorServlet;
 import com.braintribe.model.processing.shiro.service.HealthCheckProcessor;
@@ -44,6 +52,7 @@ import com.braintribe.transport.http.HttpClientProvider;
 import com.braintribe.transport.ssl.SslSocketFactoryProvider;
 import com.braintribe.transport.ssl.impl.EasySslSocketFactoryProvider;
 import com.braintribe.transport.ssl.impl.StrictSslSocketFactoryProvider;
+import com.braintribe.utils.FileTools;
 import com.braintribe.wire.api.annotation.Import;
 import com.braintribe.wire.api.annotation.Managed;
 import com.braintribe.wire.api.context.WireContextConfiguration;
@@ -52,6 +61,7 @@ import com.braintribe.wire.api.space.WireSpace;
 import tribefire.module.wire.contract.HttpContract;
 import tribefire.module.wire.contract.MarshallingContract;
 import tribefire.module.wire.contract.ModuleReflectionContract;
+import tribefire.module.wire.contract.ModuleResourcesContract;
 import tribefire.module.wire.contract.RequestProcessingContract;
 import tribefire.module.wire.contract.RequestUserRelatedContract;
 import tribefire.module.wire.contract.ServletsContract;
@@ -85,6 +95,13 @@ public class ShiroDeployablesSpace implements WireSpace {
 
 	@Import
 	private ModuleReflectionContract module;
+
+	@Import
+	private ModuleReflectionContract reflection;
+
+	@Import
+	private ModuleResourcesContract moduleResources;
+
 
 	@Override
 	public void onLoaded(WireContextConfiguration configuration) {
@@ -129,7 +146,6 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setSystemSessionFactory(tfPlatform.systemUserRelated().sessionFactory());
 		bean.setCreateUsers(deployable.getCreateUsers());
 		bean.setConfiguration(deployable.getConfiguration());
-		bean.setExternalId(deployable.getPathIdentifier());
 		bean.setHttpClientProvider(clientProvider());
 		Set<String> userAcceptList = getPropertyWithDeprecationWarning("userAcceptList", deployable.getUserAcceptList(), "userWhiteList",
 				deployable.getUserWhiteList());
@@ -144,7 +160,6 @@ public class ShiroDeployablesSpace implements WireSpace {
 
 		bean.setShowStandardLoginForm(deployable.getShowStandardLoginForm());
 		bean.setShowTextLinks(deployable.getShowTextLinks());
-		bean.setExternalId(deployable.getExternalId());
 		bean.setPathIdentifier(deployable.getPathIdentifier());
 
 		bean.setAuthAccessIdSupplier(authenticationAccessIdSupplier());
@@ -153,7 +168,6 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setEvaluator(tfPlatform.systemUserRelated().evaluator());
 		bean.setExternalIconUrlHelper(externalIconUrlHelper());
 		bean.setObfuscateLogOutput(deployable.getObfuscateLogOutput());
-		bean.setModuleClassLoader(module.moduleClassLoader());
 		bean.setShiroTools(shiroTools());
 		return bean;
 	}
@@ -197,13 +211,61 @@ public class ShiroDeployablesSpace implements WireSpace {
 		bean.setCortexSessionProvider(tfPlatform.requestUserRelated().cortexSessionSupplier());
 		bean.setIdentification(deployable);
 		bean.setConfiguration(deployable.getConfiguration());
-		bean.setShiroIniFactory(shiro.iniFactory());
+		bean.setShiroIniFactory(iniFactory());
 		bean.setProxyFilter(shiro.shiroProxyFilter());
-		bean.setBootstrapping(shiro.bootstrapping());
-		bean.setLogin(deployable.getLogin());
+		bean.setBootstrapping(bootstrapping());
+		bean.setLoginPathIdentifier(deployable.getLogin().getPathIdentifier());
 		return bean;
 	}
 
+	@Managed
+	private Bootstrapping bootstrapping() {
+		Bootstrapping bean = new Bootstrapping();
+		bean.setEnvironmentLoaderListener(environmentLoader());
+		bean.setServletContext(tfPlatform.servlets().context());
+		bean.setModuleClassLoader(reflection.moduleClassLoader());
+		return bean;
+	}
+
+	@Managed
+	private CustomEnvironmentLoader environmentLoader() {
+		CustomEnvironmentLoader bean = new CustomEnvironmentLoader();
+		bean.setIniEnvironment(iniEnvironment());
+		return bean;
+	}
+
+	@Managed
+	private StringBasedIniEnvironment iniEnvironment() {
+		StringBasedIniEnvironment bean = new StringBasedIniEnvironment();
+		bean.setIniConfigSupplier(iniFactory());
+		return bean;
+	}
+
+	@Managed
+	private DefaultSecurityManager securityManager() {
+		DefaultSecurityManager bean = new DefaultSecurityManager();
+		return bean;
+	}
+
+	@Managed
+	private InMemorySessionDao inMemorySessionDao() {
+		InMemorySessionDao bean = new InMemorySessionDao();
+		return bean;
+	}
+
+	@Managed
+	public ShiroIniFactory iniFactory() {
+		ShiroIniFactory bean = new ShiroIniFactory();
+
+		File iniFile = moduleResources.resource("shiro.ini.vm").asFile();
+		String template = FileTools.readStringFromFile(iniFile, "UTF-8");
+
+		bean.setIniTemplate(template);
+		return bean;
+	}
+
+
+	
 	@Managed
 	private MulticastSessionDao multicastSessionDao() {
 		MulticastSessionDao bean = new MulticastSessionDao();

@@ -1,0 +1,45 @@
+#set($d='$')
+
+[main]
+# ###########################################################################
+# CONFIG:
+# ###########################################################################
+
+sessionManager = org.apache.shiro.web.session.mgt.DefaultWebSessionManager
+securityManager.sessionManager = \$sessionManager
+
+sessionDAO = tribefire.extension.shiro.processing.bootstrapping.MulticastSessionDao
+securityManager.sessionManager.sessionDAO = \$sessionDAO
+
+sessionIdGenerator = tribefire.extension.shiro.processing.bootstrapping.NodeSessionIdGenerator
+securityManager.sessionManager.sessionDAO.sessionIdGenerator = \$sessionIdGenerator
+
+pathUrlResolver = org.pac4j.core.http.callback.PathParameterCallbackUrlResolver
+
+#foreach ($authClient in $authClients)#foreach ($entry in $authClient.configuration.entrySet())$entry.key = $entry.value
+#end#end
+
+clients.callbackUrl = ${callbackUrl}
+clients.clients = #foreach ($authClient in $authClients)${d}${authClient.name}#if( $foreach.hasNext ),#end#end
+
+config = org.pac4j.core.config.Config
+config.clients = \$clients
+
+# ###########################################################################
+# REALM & FILTERS:
+# ###########################################################################
+
+callbackFilter = org.pac4j.jee.filter.CallbackFilter
+callbackFilter.config = \$config
+
+#foreach ($authClient in $authClients)#foreach ($entry in $authClient.filters.entrySet())$entry.key = $entry.value
+#end#end
+
+
+[urls]
+/${loginServletPath}/auth/callback = callbackFilter
+#foreach ($addPostfix in ${additionalCallbackUrlPostfixes})/${loginServletPath}/auth/callback${addPostfix} = callbackFilter
+#end
+#foreach ($authClient in $authClients)${authClient.urlPart}/** = ${authClient.name}_Filter
+#end
+/** = anon

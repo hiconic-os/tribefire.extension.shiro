@@ -13,33 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ============================================================================
-package com.braintribe.model.shiro.deployment;
-
-import java.util.List;
+package tribefire.extension.shiro.config;
 
 import com.braintribe.model.generic.GenericEntity;
+import com.braintribe.model.generic.annotation.Abstract;
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
 
-public interface ShiroAuthenticationConfiguration extends GenericEntity {
+@Abstract
+public interface RxNewUserRoleProvider extends GenericEntity {
 
-	final EntityType<ShiroAuthenticationConfiguration> T = EntityTypes.T(ShiroAuthenticationConfiguration.class);
-
-	List<ShiroClient> getClients();
-	void setClients(List<ShiroClient> clients);
-
-	String getCallbackUrl();
-	void setCallbackUrl(String callbackUrl);
-
-	String getDefaultRedirectUrl();
-	void setDefaultRedirectUrl(String defaultRedirectUrl);
-
-	String getUnauthorizedUrl();
-	void setUnauthorizedUrl(String unauthorizedUrl);
-
-	String getUnauthenticatedUrl();
-	void setUnauthenticatedUrl(String unauthenticatedUrl);
-
-	String getFallbackUrl();
-	void setFallbackUrl(String fallbackUrl);
+	final EntityType<RxNewUserRoleProvider> T = EntityTypes.T(RxNewUserRoleProvider.class);
+	
 }

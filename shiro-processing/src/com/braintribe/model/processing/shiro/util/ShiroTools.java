@@ -21,7 +21,6 @@ import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 
 import com.braintribe.cfg.Configurable;
-import com.braintribe.cfg.Required;
 import com.braintribe.exception.Exceptions;
 import com.braintribe.logging.Logger;
 import com.braintribe.utils.DateTools;
@@ -81,9 +80,12 @@ public class ShiroTools {
 	 *         in case of an error.
 	 */
 	public TokenContent parseTokenWithoutValidation(String token, boolean silently) {
-
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-		Thread.currentThread().setContextClassLoader(moduleClassLoader);
+
+		boolean needsCustomClassLoader = moduleClassLoader != null && moduleClassLoader != oldClassLoader;
+		if (needsCustomClassLoader)
+			Thread.currentThread().setContextClassLoader(moduleClassLoader);
+
 		try {
 			String[] tokenParts = StringTools.splitString(token, ".");
 			token.split(".");
@@ -91,7 +93,7 @@ public class ShiroTools {
 			String headerBase64 = "eyJhbGciOiJub25lIn0="; // {"alg":"none"}
 			String tokenForParsing = headerBase64 + "." + tokenParts[1] + ".";
 
-			Jwt jwt = Jwts.parser().unsecured().build().parseUnsecuredClaims(tokenForParsing);
+			Jwt<?, ?> jwt = Jwts.parser().unsecured().build().parseUnsecuredClaims(tokenForParsing);
 
 			Claims body = (Claims) jwt.getPayload();
 			Header header = jwt.getHeader();
@@ -116,12 +118,12 @@ public class ShiroTools {
 				throw Exceptions.unchecked(e, msg);
 			}
 		} finally {
-			Thread.currentThread().setContextClassLoader(oldClassLoader);
+			if (needsCustomClassLoader)
+				Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
 	}
 
 	@Configurable
-	@Required
 	public void setModuleClassLoader(ClassLoader moduleClassLoader) {
 		this.moduleClassLoader = moduleClassLoader;
 	}

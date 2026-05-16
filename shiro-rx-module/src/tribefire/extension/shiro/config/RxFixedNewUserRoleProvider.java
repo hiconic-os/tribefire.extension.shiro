@@ -1,6 +1,4 @@
 // ============================================================================
-// Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
-//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -13,23 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // ============================================================================
-package com.braintribe.model.shiro.deployment;
+package tribefire.extension.shiro.config;
 
-import com.braintribe.model.generic.base.EnumBase;
-import com.braintribe.model.generic.reflection.EnumType;
-import com.braintribe.model.generic.reflection.EnumTypes;
+import java.util.Set;
 
-public enum FieldEncoding implements EnumBase {
+import com.braintribe.model.generic.annotation.Initializer;
+import com.braintribe.model.generic.reflection.EntityType;
+import com.braintribe.model.generic.reflection.EntityTypes;
 
-	PLAIN,
-	CSV,
-	JSON;
+public interface RxFixedNewUserRoleProvider extends RxNewUserRoleProvider {
 
-	public static final EnumType T = EnumTypes.T(FieldEncoding.class);
+	EntityType<RxFixedNewUserRoleProvider> T = EntityTypes.T(RxFixedNewUserRoleProvider.class);
 
-	@Override
-	public EnumType type() {
-		return T;
-	}
+	// Why was this in place in the original code?
+	@Initializer("{'tf-admin'}")
+	Set<String> getRoles();
+	void setRoles(Set<String> roles);
 
 }

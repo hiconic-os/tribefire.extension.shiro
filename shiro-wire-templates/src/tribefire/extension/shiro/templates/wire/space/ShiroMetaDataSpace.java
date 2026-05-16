@@ -15,7 +15,6 @@
 // ============================================================================
 package tribefire.extension.shiro.templates.wire.space;
 
-import com.braintribe.logging.Logger;
 import com.braintribe.model.extensiondeployment.meta.ProcessWith;
 import com.braintribe.model.meta.GmMetaModel;
 import com.braintribe.model.processing.meta.editor.BasicModelMetaDataEditor;
@@ -24,16 +23,13 @@ import com.braintribe.model.shiro.service.ShiroRequest;
 import com.braintribe.wire.api.annotation.Import;
 import com.braintribe.wire.api.annotation.Managed;
 import com.braintribe.wire.api.scope.InstanceConfiguration;
-import com.braintribe.wire.api.space.WireSpace;
 
 import tribefire.extension.shiro.templates.api.ShiroTemplateContext;
 import tribefire.extension.shiro.templates.wire.contract.ShiroMetaDataContract;
 import tribefire.extension.shiro.templates.wire.contract.ShiroTemplatesContract;
 
 @Managed
-public class ShiroMetaDataSpace implements WireSpace, ShiroMetaDataContract {
-
-	private static final Logger logger = Logger.getLogger(ShiroMetaDataSpace.class);
+public class ShiroMetaDataSpace implements ShiroMetaDataContract {
 
 	@Import
 	private ShiroTemplatesContract shiroTemplates;
