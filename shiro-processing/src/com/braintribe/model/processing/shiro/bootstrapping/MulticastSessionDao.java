@@ -57,24 +57,58 @@ public class MulticastSessionDao extends CachingSessionDAO {
 	protected Evaluator<ServiceRequest> requestEvaluator;
 	protected String instanceIdAsString;
 
+	private ClassLoader moduleClassLoader;
+
 	@Override
 	protected void doUpdate(Session session) {
-		INSTANCE.doUpdateInternal(session);
+		Thread currentThread = Thread.currentThread();
+		ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+
+		currentThread.setContextClassLoader(moduleClassLoader);
+		try {
+			INSTANCE.doUpdateInternal(session);
+		} finally {
+			currentThread.setContextClassLoader(previousContextClassLoader);
+		}
 	}
 
 	@Override
 	protected void doDelete(Session session) {
-		INSTANCE.doDeleteInternal(session);
+		Thread currentThread = Thread.currentThread();
+		ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+
+		currentThread.setContextClassLoader(moduleClassLoader);
+		try {
+			INSTANCE.doDeleteInternal(session);
+		} finally {
+			currentThread.setContextClassLoader(previousContextClassLoader);
+		}
 	}
 
 	@Override
 	protected Serializable doCreate(Session session) {
-		return INSTANCE.doCreateInternal(session);
+		Thread currentThread = Thread.currentThread();
+		ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+
+		currentThread.setContextClassLoader(moduleClassLoader);
+		try {
+			return INSTANCE.doCreateInternal(session);
+		} finally {
+			currentThread.setContextClassLoader(previousContextClassLoader);
+		}
 	}
 
 	@Override
 	protected Session doReadSession(Serializable sessionId) {
-		return INSTANCE.doReadSessionInternal(sessionId);
+		Thread currentThread = Thread.currentThread();
+		ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+
+		currentThread.setContextClassLoader(moduleClassLoader);
+		try {
+			return INSTANCE.doReadSessionInternal(sessionId);
+		} finally {
+			currentThread.setContextClassLoader(previousContextClassLoader);
+		}
 	}
 
 	protected void doUpdateInternal(Session session) {
@@ -251,6 +285,11 @@ public class MulticastSessionDao extends CachingSessionDAO {
 	@Required
 	public void setInstanceIdAsString(String instanceIdAsString) {
 		this.instanceIdAsString = instanceIdAsString;
+	}
+	@Required
+	@Configurable
+	public void setModuleClassLoader(ClassLoader moduleClassLoader) {
+		this.moduleClassLoader = moduleClassLoader;
 	}
 
 }

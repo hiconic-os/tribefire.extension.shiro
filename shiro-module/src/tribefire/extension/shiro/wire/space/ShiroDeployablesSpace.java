@@ -102,7 +102,6 @@ public class ShiroDeployablesSpace implements WireSpace {
 	@Import
 	private ModuleResourcesContract moduleResources;
 
-
 	@Override
 	public void onLoaded(WireContextConfiguration configuration) {
 		WireSpace.super.onLoaded(configuration);
@@ -264,13 +263,12 @@ public class ShiroDeployablesSpace implements WireSpace {
 		return bean;
 	}
 
-
-	
 	@Managed
 	private MulticastSessionDao multicastSessionDao() {
 		MulticastSessionDao bean = new MulticastSessionDao();
 		bean.setRequestEvaluator(tfPlatform.systemUserRelated().evaluator());
 		bean.setInstanceIdAsString(tfPlatform.platformReflection().instanceId().stringify());
+		bean.setModuleClassLoader(reflection.moduleClassLoader());
 		MulticastSessionDao.INSTANCE = bean;
 		return bean;
 	}
