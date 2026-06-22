@@ -15,11 +15,18 @@
 // ============================================================================
 package com.braintribe.model.processing.shiro.bootstrapping;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.SerializationException;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.mgt.SimpleSession;
@@ -196,7 +203,7 @@ public class MulticastSessionDao extends CachingSessionDAO {
 					if (b64 != null) {
 						logger.debug(() -> "Received a remote session with ID: " + id + " from " + instanceId);
 						byte[] bytes = Base64.decode(b64);
-						Session deserializedSession = SerializationUtils.deserialize(bytes);
+						Session deserializedSession = deserialize(new ByteArrayInputStream(bytes));
 						return deserializedSession;
 					}
 				}
@@ -205,6 +212,61 @@ public class MulticastSessionDao extends CachingSessionDAO {
 		}
 		logger.debug(() -> "Received no remote session with ID: " + id);
 		return null;
+	}
+
+	public <T> T deserialize(final InputStream inputStream) {
+		// For some reason, commons-lang3 does not use the ThreadContextClassLoader.
+		Objects.requireNonNull(inputStream, "inputStream");
+		try (ObjectInputStream in = new ClassLoaderAwareObjectInputStream(inputStream, moduleClassLoader)) {
+			final T obj = (T) in.readObject();
+			return obj;
+		} catch (final ClassNotFoundException | IOException | NegativeArraySizeException ex) {
+			throw new SerializationException(ex);
+		}
+	}
+
+	static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
+
+		private final ClassLoader classLoader;
+
+		/**
+		 * Constructs a new instance.
+		 * 
+		 * @param in
+		 *            The {@link InputStream}.
+		 * @param classLoader
+		 *            classloader to use
+		 * @throws IOException
+		 *             if an I/O error occurs while reading stream header.
+		 * @see java.io.ObjectInputStream
+		 */
+		ClassLoaderAwareObjectInputStream(final InputStream in, final ClassLoader classLoader) throws IOException {
+			super(in);
+			this.classLoader = classLoader;
+		}
+
+		/**
+		 * Overridden version that uses the parameterized {@link ClassLoader} or the {@link ClassLoader} of the current {@link Thread} to resolve the
+		 * class.
+		 * 
+		 * @param desc
+		 *            An instance of class {@link ObjectStreamClass}.
+		 * @return A {@link Class} object corresponding to {@code desc}.
+		 * @throws IOException
+		 *             Any of the usual Input/Output exceptions.
+		 * @throws ClassNotFoundException
+		 *             If class of a serialized object cannot be found.
+		 */
+		@Override
+		protected Class<?> resolveClass(final ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+			final String name = desc.getName();
+			try {
+				return Class.forName(name, false, classLoader);
+			} catch (final ClassNotFoundException ex) {
+				return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
+			}
+		}
+
 	}
 
 	protected SerializedSession extractFromServiceResult(ServiceResult serviceResult) {
@@ -232,16 +294,16 @@ public class MulticastSessionDao extends CachingSessionDAO {
 		return serialize(session);
 	}
 
-	private static Session deserialize(String serializedB64) {
+	private Session deserialize(String serializedB64) {
 		try {
 			byte[] bytes = Base64.decode(serializedB64);
-			Session session = SerializationUtils.deserialize(bytes);
+			Session session = deserialize(new ByteArrayInputStream(bytes));
 			return session;
 		} catch (Exception e) {
 			throw Exceptions.unchecked(e, "Could not deserialize Session");
 		}
 	}
-	private static String serialize(Session session) {
+	private String serialize(Session session) {
 		String id = session.getId().toString();
 		try {
 			Collection<Object> attributeKeys = session.getAttributeKeys();
