@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.braintribe.model.shiro.deployment.FieldEncoding;
+import com.braintribe.model.shiro.deployment.ShiroClient;
 import com.braintribe.utils.lcd.CollectionTools2;
 
 import hiconic.rx.access.module.api.AccessContract;
@@ -28,6 +29,7 @@ public class RxShiroTemplateContextImpl implements RxShiroTemplateContext, RxShi
 	private String idPrefix;
 
 	private String servletPath;
+	private List<ShiroClient> clients;
 
 	private AccessContract accessContract;
 	private String authAccessId;
@@ -121,6 +123,7 @@ public class RxShiroTemplateContextImpl implements RxShiroTemplateContext, RxShi
 	@Override public String getIdPrefix() { return idPrefix; }
 
 	@Override public String getServletPath() { return servletPath; }
+	@Override public List<ShiroClient> getClients() { return clients; }
 
 	@Override public AccessContract getAccessContract() { return accessContract; }
 	@Override public String getAuthAccessId() { return authAccessId; }
@@ -237,6 +240,12 @@ public class RxShiroTemplateContextImpl implements RxShiroTemplateContext, RxShi
 	@Override
 	public RxShiroTemplateContextBuilder setServletPath(String servletPath) {
 		this.servletPath = servletPath;
+		return this;
+	}
+
+	@Override
+	public RxShiroTemplateContextBuilder setClients(List<ShiroClient> clients) {
+		this.clients = clients;
 		return this;
 	}
 

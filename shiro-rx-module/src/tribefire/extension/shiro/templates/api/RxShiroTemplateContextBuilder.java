@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.braintribe.model.shiro.deployment.FieldEncoding;
+import com.braintribe.model.shiro.deployment.ShiroClient;
 
 import hiconic.rx.access.module.api.AccessContract;
 
@@ -27,6 +28,7 @@ public interface RxShiroTemplateContextBuilder {
 	RxShiroTemplateContextBuilder setIdPrefix(String idPrefix);
 
 	RxShiroTemplateContextBuilder setServletPath(String servletPath);
+	RxShiroTemplateContextBuilder setClients(List<ShiroClient> clients);
 	
 	RxShiroTemplateContextBuilder setAccessContract(AccessContract accessContract);
 	RxShiroTemplateContextBuilder setAuthAccessId(String authAccessId);

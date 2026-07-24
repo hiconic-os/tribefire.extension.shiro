@@ -65,6 +65,9 @@ public class RxShiroTemplatesSpace implements WireSpace {
 	public ShiroAuthenticationConfiguration authenticationConfiguration(RxShiroTemplateContext context) {
 		ShiroAuthenticationConfiguration bean = ShiroAuthenticationConfiguration.T.create();
 
+		if (context.getClients() != null)
+			bean.getClients().addAll(context.getClients());
+
 		if (context.getGoogleEnabled())
 			bean.getClients().add(authenticationGoogle(context));
 

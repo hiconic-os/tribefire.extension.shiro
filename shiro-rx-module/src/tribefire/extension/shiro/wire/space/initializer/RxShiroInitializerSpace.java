@@ -79,6 +79,7 @@ public class RxShiroInitializerSpace implements WireSpace {
 		RxShiroTemplateContextBuilder builder = RxShiroTemplateContext.builder()
 			.setAccessContract(access)
 			.setServletPath(config.getServletPath())
+			.setClients(config.getClients())
 			.setAuthAccessId(config.getUserAccessId())
 			.setObfuscateLogOutput(config.getObfuscateLogOutput())
 			.setGoogleEnabled(config.getEnableGoogle())

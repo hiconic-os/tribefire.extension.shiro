@@ -21,6 +21,7 @@ import com.braintribe.model.generic.annotation.Initializer;
 import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
 import com.braintribe.model.shiro.deployment.FieldEncoding;
+import com.braintribe.model.shiro.deployment.ShiroClient;
 
 public interface ShiroConfiguration extends GenericEntity {
 
@@ -39,6 +40,14 @@ public interface ShiroConfiguration extends GenericEntity {
 	@Initializer("'remote-login'")
 	String getServletPath();
 	void setServletPath(String servletPath);
+
+	/**
+	 * Fully modeled authentication clients for configurations which need more control than
+	 * the convenience properties below provide. They are added in addition to enabled
+	 * convenience clients.
+	 */
+	List<ShiroClient> getClients();
+	void setClients(List<ShiroClient> clients);
 	
 	// Google
 
