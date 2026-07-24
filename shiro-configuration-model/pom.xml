@@ -6,7 +6,7 @@
         <version>[5.0,5.1)</version>
     </parent>
     <artifactId>shiro-configuration-model</artifactId>
-    <version>5.0.2</version>
+    <version>5.0.3</version>
     <properties>
         <archetype>model</archetype>
     </properties>
