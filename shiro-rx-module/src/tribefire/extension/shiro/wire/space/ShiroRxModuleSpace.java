@@ -16,6 +16,7 @@ import hiconic.rx.web.server.api.WebServerContract;
 import hiconic.rx.worker.api.WorkerContract;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServlet;
+import tribefire.extension.shiro.ShiroRxConstants;
 import tribefire.extension.shiro.config.RxLogin;
 import tribefire.extension.shiro.config.RxServlet;
 import tribefire.extension.shiro.config.RxSessionValidator;
@@ -74,10 +75,16 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 			return;
 
 		registerFilter();
+		registerLoginImages();
 		registerLoginServlet();
 		registerBootstrappingWorker();
 		registerSessionValidatorServlet();
 		registerCheckProcessor();
+	}
+
+	/** The login pages address these by URL, so the folder this module owns is mapped under the very same path segment. */
+	private void registerLoginImages() {
+		webServer.addPackagedWebResources(ShiroRxConstants.LOGIN_IMAGES, ShiroRxConstants.LOGIN_IMAGES, ShiroRxConstants.LOGIN_IMAGES);
 	}
 
 	private void registerFilter() {

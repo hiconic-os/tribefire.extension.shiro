@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.braintribe.model.processing.shiro.ShiroAuthenticationUrl;
-import com.braintribe.model.processing.shiro.ShiroConstants;
 import com.braintribe.model.resource.Resource;
 import com.braintribe.model.shiro.deployment.FieldEncoding;
 import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
@@ -42,6 +41,7 @@ import com.braintribe.wire.api.annotation.Import;
 import com.braintribe.wire.api.annotation.Managed;
 import com.braintribe.wire.api.space.WireSpace;
 
+import tribefire.extension.shiro.ShiroRxConstants;
 import tribefire.extension.shiro.config.RxFixedNewUserRoleProvider;
 import tribefire.extension.shiro.config.RxLogin;
 import tribefire.extension.shiro.config.RxMappedNewUserRoleProvider;
@@ -430,7 +430,7 @@ public class RxShiroTemplatesSpace implements WireSpace {
 			String clientName = client.getName();
 			String authUrl = tfs + context.getServletPath() + "/auth/" + clientName.toLowerCase();
 			// TODO not sure about these images...
-			String imageUrl = tfs + ShiroConstants.STATIC_IMAGES_RELATIVE_PATH + clientName.toLowerCase() + ".png";
+			String imageUrl = tfs + ShiroRxConstants.LOGIN_IMAGES_RELATIVE_PATH + clientName.toLowerCase() + ".png";
 			ShiroAuthenticationUrl ctx = new ShiroAuthenticationUrl(authUrl, clientName, imageUrl);
 
 			Resource loginIcon = client.getLoginIcon();

@@ -17,7 +17,6 @@ import java.util.function.Supplier;
 
 import org.apache.shiro.mgt.DefaultSecurityManager;
 
-import com.braintribe.model.processing.shiro.ShiroConstants;
 import com.braintribe.model.processing.shiro.bootstrapping.NewUserRoleProvider;
 import com.braintribe.provider.Holder;
 import com.braintribe.transport.http.DefaultHttpClientProvider;
@@ -36,6 +35,7 @@ import hiconic.rx.module.api.wire.RxPlatformContract;
 import hiconic.rx.security.api.SecurityContract;
 import hiconic.rx.security.web.api.WebSecurityContract;
 import hiconic.rx.web.server.api.WebServerContract;
+import tribefire.extension.shiro.ShiroRxConstants;
 import tribefire.extension.shiro.config.RxFixedNewUserRoleProvider;
 import tribefire.extension.shiro.config.RxLogin;
 import tribefire.extension.shiro.config.RxMappedNewUserRoleProvider;
@@ -88,7 +88,7 @@ public class RxShiroDeployablesSpace implements WireSpace {
 		ShiroServiceProcessor bean = new ShiroServiceProcessor();
 		bean.setConfiguration(deployable.getConfiguration());
 		bean.setPathIdentifier(deployable.getPathIdentifier());
-		bean.setStaticImagesRelativePath("/res/login-images/");
+		bean.setStaticImagesRelativePath(ShiroRxConstants.LOGIN_IMAGES_RELATIVE_PATH);
 		bean.setMulticastSessionDao(multicastSessionDao());
 		bean.setAuthAccessIdSupplier(authenticationAccessIdSupplier());
 		bean.setSessionFactory(accessContract.systemSessionFactory());
@@ -124,7 +124,7 @@ public class RxShiroDeployablesSpace implements WireSpace {
 		bean.setShowTextLinks(deployable.getShowTextLinks());
 		bean.setPathIdentifier(deployable.getPathIdentifier());
 		bean.setAddSessionParameter(deployable.getAddSessionParameterOnRedirect());
-		bean.setStaticImagesRelativePath(ShiroConstants.STATIC_IMAGES_RELATIVE_PATH);
+		bean.setStaticImagesRelativePath(ShiroRxConstants.LOGIN_IMAGES_RELATIVE_PATH);
 		bean.setEvaluator(platform.serviceProcessing().systemEvaluator());
 		bean.setExternalIconUrlHelper(externalIconUrlHelper());
 		bean.setObfuscateLogOutput(deployable.getObfuscateLogOutput());
