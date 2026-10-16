@@ -27,6 +27,7 @@ import com.braintribe.wire.api.space.WireSpace;
 
 import hiconic.rx.access.module.api.AccessContract;
 import hiconic.rx.module.api.service.ModelConfigurations;
+import hiconic.rx.security.web.api.WebSecurityContract;
 import hiconic.rx.web.server.api.WebServerContract;
 import tribefire.extension.shiro.config.RxLogin;
 import tribefire.extension.shiro.config.RxSessionValidator;
@@ -47,6 +48,7 @@ public class RxShiroInitializerSpace implements WireSpace {
 	@Import private RxShiroTemplatesSpace templates;
 	@Import private RxShiroMetaDataSpace metaData;
 	@Import private WebServerContract webServer;
+	@Import private WebSecurityContract webSecurity;
 	@Import private AccessContract access;
 	// @formatter:on
 
@@ -68,7 +70,7 @@ public class RxShiroInitializerSpace implements WireSpace {
 
 		String unauthorizedUrl = config.getUnauthorizedUrl();
 		if (StringTools.isBlank(unauthorizedUrl))
-			unauthorizedUrl = publicServicesUrl + "/" + config.getServletPath();
+			unauthorizedUrl = publicServicesUrl + "/" + webSecurity.defaultLoginPath();
 
 		String acceptListString = config.getLoginAcceptList();
 		String blockListString = config.getLoginBlockList();

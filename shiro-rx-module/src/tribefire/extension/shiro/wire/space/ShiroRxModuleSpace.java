@@ -1,5 +1,10 @@
 package tribefire.extension.shiro.wire.space;
 
+import java.util.Locale;
+
+import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
+import com.braintribe.model.shiro.deployment.ShiroClient;
+import com.braintribe.model.shiro.deployment.client.ShiroAzureAdClient;
 import com.braintribe.wire.api.annotation.Import;
 import com.braintribe.wire.api.annotation.Managed;
 
@@ -10,7 +15,8 @@ import hiconic.rx.module.api.config.RxPlatformConfigurator;
 import hiconic.rx.module.api.service.ModelConfigurations;
 import hiconic.rx.module.api.wire.RxModuleContract;
 import hiconic.rx.module.api.wire.RxPlatformContract;
-import hiconic.rx.security.web.api.WebSecurityConfigurationContract;
+import hiconic.rx.security.web.api.LoginOption;
+import hiconic.rx.security.web.api.WebSecurityExtensionContract;
 import hiconic.rx.web.server.api.FilterSymbol;
 import hiconic.rx.web.server.api.WebServerContract;
 import hiconic.rx.worker.api.WorkerContract;
@@ -40,7 +46,7 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 	@Import private RxPlatformContract platform;
 	@Import private CheckContract check;
 	@Import private WorkerContract worker;
-	@Import private WebSecurityConfigurationContract webSecurityConfiguration;
+	@Import private WebSecurityExtensionContract webSecurity;
 	@Import private WebServerContract webServer;
 
 	@Import private RxShiroSpace shiro;
@@ -52,6 +58,8 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 		shiroFilter,
 
 	}
+
+	private boolean loginOptionsRegistered;
 
 	@Override
 	public void configureModels(ModelConfigurations configurations) {
@@ -66,7 +74,26 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 		if (!isShiroEnabled())
 			return;
 
-		webSecurityConfiguration.setDefaultLoginPath(shiroConfiguration().getServletPath());
+		registerLoginOptions();
+	}
+
+	private void registerLoginOptions() {
+		if (loginOptionsRegistered)
+			return;
+
+		loginOptionsRegistered = true;
+		RxLogin login = shiroInitializer.loginDenotation();
+		ShiroAuthenticationConfiguration configuration = login.getConfiguration();
+		for (ShiroClient client : configuration.getClients()) {
+			if (!Boolean.TRUE.equals(client.getActive()))
+				continue;
+
+			String clientPath = client.getName().toLowerCase(Locale.ROOT);
+			String targetPath = login.getPathIdentifier() + "/auth/" + clientPath;
+			String imageName = client instanceof ShiroAzureAdClient ? "azuread" : clientPath;
+			String iconPath = ShiroRxConstants.LOGIN_IMAGES + "/" + imageName + ".png";
+			webSecurity.registerLoginOption(new LoginOption(client.getName(), client.getName(), targetPath, iconPath));
+		}
 	}
 
 	@Override
