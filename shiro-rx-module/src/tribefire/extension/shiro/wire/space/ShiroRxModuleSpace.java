@@ -13,6 +13,7 @@ import hiconic.rx.check.model.aspect.CheckCoverage;
 import hiconic.rx.check.model.aspect.CheckLatency;
 import hiconic.rx.module.api.config.RxPlatformConfigurator;
 import hiconic.rx.module.api.service.ModelConfigurations;
+import hiconic.rx.module.api.service.ServiceDomainConfigurations;
 import hiconic.rx.module.api.wire.RxModuleContract;
 import hiconic.rx.module.api.wire.RxPlatformContract;
 import hiconic.rx.security.web.api.LoginOption;
@@ -22,6 +23,7 @@ import hiconic.rx.web.server.api.WebServerContract;
 import hiconic.rx.worker.api.WorkerContract;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServlet;
+import tribefire.extension.shiro._ShiroServiceModel_;
 import tribefire.extension.shiro.ShiroRxConstants;
 import tribefire.extension.shiro.config.RxLogin;
 import tribefire.extension.shiro.config.RxServlet;
@@ -67,6 +69,15 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 			return;
 
 		shiroInitializer.metaData(configurations);
+	}
+
+	@Override
+	public void configureServiceDomains(ServiceDomainConfigurations configurations) {
+		if (!isShiroEnabled())
+			return;
+
+		// Cluster session requests are dispatched through multicast and must be resolvable on every Shiro-enabled node.
+		configurations.internal().addModel(_ShiroServiceModel_.reflection);
 	}
 
 	@Override
