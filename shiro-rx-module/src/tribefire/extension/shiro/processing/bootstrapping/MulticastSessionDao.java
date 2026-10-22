@@ -158,38 +158,55 @@ public class MulticastSessionDao extends CachingSessionDAO {
 				logger.trace(() -> "Received a response from instance: " + instanceId);
 
 				ServiceResult serviceResult = entry.getValue();
-				SerializedSession serSession = extractFromServiceResult(serviceResult);
+				SerializedSession serSession = extractFromServiceResult(id.toString(), instanceId, serviceResult);
 				if (serSession != null) {
 					String b64 = serSession.getSerializedSession();
 					if (b64 != null) {
-						logger.debug(() -> "Received a remote session with ID: " + id + " from " + instanceId);
 						byte[] bytes = Base64.decode(b64);
 						Session deserializedSession = SerializationUtils.deserialize(bytes);
+						logger.info(() -> "Received remote Shiro session with ID: " + id + " from " + instanceId + ", "
+								+ attributeSummary(deserializedSession));
 						return deserializedSession;
 					}
 				}
 
 			}
 		}
-		logger.debug(() -> "Received no remote session with ID: " + id);
+		logger.warn(() -> "Received no remote Shiro session with ID: " + id);
 		return null;
 	}
 
-	protected SerializedSession extractFromServiceResult(ServiceResult serviceResult) {
+	protected SerializedSession extractFromServiceResult(String sessionId, InstanceId instanceId, ServiceResult serviceResult) {
 		if (serviceResult == null) {
 			return null;
 		}
 		if (serviceResult instanceof ResponseEnvelope) {
 			ResponseEnvelope envelope = (ResponseEnvelope) serviceResult;
-			return (SerializedSession) envelope.getResult();
+			Object result = envelope.getResult();
+			if (result == null || result instanceof SerializedSession)
+				return (SerializedSession) result;
+
+			logger.warn("Unexpected response while retrieving Shiro session with ID: " + sessionId + " from " + instanceId + ": "
+					+ result.getClass().getName());
+			return null;
 		} else if (serviceResult instanceof Failure) {
+			Failure failure = (Failure) serviceResult;
+			logger.warn("Failed to retrieve Shiro session with ID: " + sessionId + " from " + instanceId + ": " + failure.getType() + ": "
+					+ failure.getMessage() + (failure.getTracebackId() != null ? " (tracebackId=" + failure.getTracebackId() + ")" : ""));
 			return null;
 		} else if (serviceResult instanceof StillProcessing) {
+			logger.warn("Unexpected StillProcessing result while retrieving Shiro session with ID: " + sessionId + " from " + instanceId);
 			return null;
 		} else {
-			logger.debug("Unsupported ServiceResult type: " + serviceResult);
+			logger.warn("Unsupported result while retrieving Shiro session with ID: " + sessionId + " from " + instanceId + ": "
+					+ serviceResult.entityType().getTypeSignature());
 			return null;
 		}
+	}
+
+	private static String attributeSummary(Session session) {
+		Collection<Object> keys = session.getAttributeKeys();
+		return keys == null ? "no attributes" : keys.size() + " attribute(s): " + keys;
 	}
 
 	public String getLocalSessionSerialized(String id) {

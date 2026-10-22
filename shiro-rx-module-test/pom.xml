@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tribefire.extension.shiro</groupId>
+        <artifactId>parent</artifactId>
+        <version>[5.0,5.1)</version>
+    </parent>
+    <artifactId>shiro-rx-module-test</artifactId>
+    <version>5.0.1</version>
+    <properties>
+        <archetype>test</archetype>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>tribefire.extension.shiro</groupId>
+            <artifactId>shiro-rx-module</artifactId>
+            <version>${V.tribefire.extension.shiro}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.testing</groupId>
+            <artifactId>unit-test-deps</artifactId>
+            <version>[2.0,2.1)</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>gm-core4-jvm</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+    </dependencies>
+</project>

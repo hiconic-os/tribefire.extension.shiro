@@ -13,6 +13,7 @@ import hiconic.rx.check.model.aspect.CheckCoverage;
 import hiconic.rx.check.model.aspect.CheckLatency;
 import hiconic.rx.module.api.config.RxPlatformConfigurator;
 import hiconic.rx.module.api.service.ModelConfigurations;
+import hiconic.rx.module.api.service.ModelSymbol;
 import hiconic.rx.module.api.service.ServiceDomainConfigurations;
 import hiconic.rx.module.api.wire.RxModuleContract;
 import hiconic.rx.module.api.wire.RxPlatformContract;
@@ -76,8 +77,10 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 		if (!isShiroEnabled())
 			return;
 
-		// Cluster session requests are dispatched through multicast and must be resolvable on every Shiro-enabled node.
-		configurations.internal().addModel(_ShiroServiceModel_.reflection);
+		// Cluster session requests are dispatched through multicast and must be resolvable on every Shiro-enabled node. The configured model is
+		// essential here because it carries the ProcessWith metadata registered in configureModels(). Adding only the raw model makes the request
+		// type visible, but leaves it without a processor.
+		configurations.internal().addModel(ModelSymbol.configured(_ShiroServiceModel_.reflection));
 	}
 
 	@Override
