@@ -6,7 +6,7 @@
         <version>[5.0,5.1)</version>
     </parent>
     <artifactId>shiro-rx-module</artifactId>
-    <version>5.0.13</version>
+    <version>5.0.14</version>
     <properties/>
     <dependencies>
         <dependency>
