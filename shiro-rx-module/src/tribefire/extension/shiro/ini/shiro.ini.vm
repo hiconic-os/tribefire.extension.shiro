@@ -25,6 +25,9 @@ clients.clients = #foreach ($authClient in $authClients)${d}${authClient.name}#i
 config = org.pac4j.core.config.Config
 config.clients = \$clients
 
+sessionStoreFactory = tribefire.extension.shiro.processing.bootstrapping.RenewingShiroSessionStoreFactory
+config.sessionStoreFactory = \$sessionStoreFactory
+
 # ###########################################################################
 # REALM & FILTERS:
 # ###########################################################################

@@ -164,7 +164,7 @@ public class MulticastSessionDao extends CachingSessionDAO {
 					if (b64 != null) {
 						byte[] bytes = Base64.decode(b64);
 						Session deserializedSession = SerializationUtils.deserialize(bytes);
-						logger.info(() -> "Received remote Shiro session with ID: " + id + " from " + instanceId + ", "
+						logger.debug(() -> "Received remote Shiro session with ID: " + id + " from " + instanceId + ", "
 								+ attributeSummary(deserializedSession));
 						return deserializedSession;
 					}
@@ -172,7 +172,7 @@ public class MulticastSessionDao extends CachingSessionDAO {
 
 			}
 		}
-		logger.warn(() -> "Received no remote Shiro session with ID: " + id);
+		logger.debug(() -> "Received no remote Shiro session with ID: " + id);
 		return null;
 	}
 

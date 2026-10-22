@@ -100,6 +100,10 @@ public class ShiroIniFactory implements Supplier<String> {
 
 					addConfiguration(authClient, "oidcConfig_" + name, "org.pac4j.oidc.config.AzureAd2OidcConfiguration");
 					addConfiguration(authClient, "oidcConfig_" + name + ".tenant", azureAdClient.getTenant());
+					addConfiguration(authClient, "oidcConfig_" + name + ".preferredJwsAlgorithmAsString", "RS256");
+					// Entra ID claims already arrive in the verified ID token. Avoid an additional, non-essential UserInfo request which may fail
+					// independently.
+					addConfiguration(authClient, "oidcConfig_" + name + ".callUserInfoEndpoint", "false");
 					additionalCallbackUrlPostfixes.add("/AzureAd");
 					additionalCallbackUrlPostfixes.add("/" + name);
 
