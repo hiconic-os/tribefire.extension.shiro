@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -57,6 +58,7 @@ import com.braintribe.common.attribute.AttributeContext;
 import com.braintribe.common.attribute.common.Waypoint;
 import com.braintribe.common.lcd.Pair;
 import com.braintribe.gm.model.reason.Maybe;
+import com.braintribe.gm.model.reason.Reason;
 import com.braintribe.logging.Logger;
 import com.braintribe.model.generic.GenericEntity;
 import com.braintribe.model.generic.eval.EvalContext;
@@ -95,6 +97,9 @@ import dev.hiconic.servlet.api.remote.RemoteClientAddressResolver;
 import dev.hiconic.servlet.impl.remote.DefaultRemoteClientAddressResolver;
 import hiconic.rx.security.api.UserService;
 import hiconic.rx.security.web.api.CookieHandler;
+import hiconic.rx.security.web.api.LoginFlow;
+import hiconic.rx.security.web.api.LoginIntervention;
+import hiconic.rx.security.web.api.LoginInterventionState;
 import hiconic.rx.security.web.api.WebSecurityConstants;
 import hiconic.rx.servlet.velocity.BasicTemplateBasedServlet;
 import io.buji.pac4j.subject.Pac4jPrincipal;
@@ -103,6 +108,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import net.minidev.json.JSONArray;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
@@ -129,6 +135,11 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	private UserService userService;
 	private Supplier<AttributeContext> systemAttributeContextSupplier;
 	private Function<HttpServletRequest, String> entryPointProvider = request -> null;
+	private LoginFlow loginFlow;
+	private String defaultLoginPath;
+	private static final String LOGIN_ACTION_SESSION_ATTRIBUTE = ShiroLoginServlet.class.getName() + ".loginAction";
+	private static final String LOGIN_ACTION_CLIENT_SESSION_ATTRIBUTE = ShiroLoginServlet.class.getName() + ".loginActionClient";
+	private static final String LOGIN_ACTION_CONTINUE_SESSION_ATTRIBUTE = ShiroLoginServlet.class.getName() + ".loginActionContinue";
 
 	private ShiroAuthenticationConfiguration configuration;
 
@@ -168,6 +179,10 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		if (handleLoginActionStart(req, resp))
+			return;
+		PendingLoginAction queuedLoginAction = pendingLoginAction(req);
+
 		// resp.setHeader("Cache-Control", "no-cache, no-store");
 		resp.setHeader("Expires", "Tue, 03 Jul 2001 06:00:00 GMT");
 		resp.setDateHeader("Last-Modified", new Date().getTime());
@@ -232,18 +247,39 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 								UserSession session = null;
 								try {
+									PendingLoginAction pendingAction = consumePendingLoginAction(req, queuedLoginAction, shiroClient);
+									if (pendingAction != null) {
+										Maybe<LoginIntervention> actionResult = loginFlow.performAction(pendingAction.actionId(),
+												authRequest.getCredentials(), authRequest.getEntryPoint());
+										if (actionResult.isUnsatisfied()) {
+											deleteShiroSessionCookies(req, resp);
+											redirectToLogin(resp, shiroClient, pendingAction.continuePath(), (Reason) actionResult.whyUnsatisfied());
+											return;
+										}
+										LoginIntervention intervention = actionResult.get();
+										if (intervention.state() != LoginInterventionState.RETRY_AUTHENTICATION) {
+											deleteShiroSessionCookies(req, resp);
+											redirectToLogin(resp, shiroClient, pendingAction.continuePath(), intervention);
+											return;
+										}
+									}
 
 									// Do authentication.
-									session = authenticate(resp, authRequest);
-									if (session == null) {
+									Maybe<UserSession> sessionMaybe = authenticate(authRequest);
+									if (sessionMaybe.isUnsatisfied()) {
 										logger.debug("Authentication of user " + username + " failed.");
-										return; // Response message is already handled in authenticate.
+										deleteShiroSessionCookies(req, resp);
+										redirectToLogin(resp, shiroClient,
+												pendingAction == null ? acquireContinuePath(req) : pendingAction.continuePath(),
+												(Reason) sessionMaybe.whyUnsatisfied());
+										return;
 									}
+									session = sessionMaybe.get();
 
 									final String sessionId = session.getSessionId();
 									logger.debug(() -> "Successfully authenticated user: " + username + " with session: " + sessionId);
 
-									String continuePath = acquireContinuePath(req);
+									String continuePath = pendingAction == null ? acquireContinuePath(req) : pendingAction.continuePath();
 									String redirectUrl = continuePath;
 
 									cookieHandler.ensureCookie(req, resp, sessionId);
@@ -303,6 +339,69 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		} else {
 			logger.debug(() -> "A user has been authenticated. Hence, a message has been sent to the client already at this point.");
 		}
+	}
+
+	private record PendingLoginAction(String actionId, String clientName, String continuePath) {
+	}
+
+	private boolean handleLoginActionStart(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String pathInfo = request.getPathInfo();
+		if (pathInfo == null || !pathInfo.startsWith("/action/"))
+			return false;
+
+		String clientPath = pathInfo.substring("/action/".length());
+		ShiroClient client = configuration.getClients().stream()
+				.filter(c -> Boolean.TRUE.equals(c.getActive()))
+				.filter(c -> c.getName().equalsIgnoreCase(clientPath))
+				.findFirst().orElse(null);
+		String actionId = request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_ACTION);
+		if (client == null || StringTools.isBlank(actionId)) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid login action request");
+			return true;
+		}
+
+		HttpSession session = request.getSession(true);
+		session.setAttribute(LOGIN_ACTION_SESSION_ATTRIBUTE, actionId);
+		session.setAttribute(LOGIN_ACTION_CLIENT_SESSION_ATTRIBUTE, client.getName());
+		String continuePath = request.getParameter(WebSecurityConstants.REQUEST_PARAM_CONTINUE);
+		if (continuePath != null)
+			session.setAttribute(LOGIN_ACTION_CONTINUE_SESSION_ATTRIBUTE, continuePath);
+		else
+			session.removeAttribute(LOGIN_ACTION_CONTINUE_SESSION_ATTRIBUTE);
+
+		String authUrl = publicServicesUrl + "/" + pathIdentifier + "/auth/" + client.getName().toLowerCase(Locale.ROOT);
+		if (!StringTools.isBlank(continuePath))
+			authUrl += "?" + WebSecurityConstants.REQUEST_PARAM_CONTINUE + "=" + urlEncode(continuePath);
+		response.sendRedirect(authUrl);
+		return true;
+	}
+
+	private PendingLoginAction pendingLoginAction(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session == null)
+			return null;
+
+		String actionId = (String) session.getAttribute(LOGIN_ACTION_SESSION_ATTRIBUTE);
+		String actionClient = (String) session.getAttribute(LOGIN_ACTION_CLIENT_SESSION_ATTRIBUTE);
+		if (actionId == null || actionClient == null)
+			return null;
+
+		String continuePath = (String) session.getAttribute(LOGIN_ACTION_CONTINUE_SESSION_ATTRIBUTE);
+		return new PendingLoginAction(actionId, actionClient, continuePath == null ? acquireContinuePath(request) : continuePath);
+	}
+
+	private PendingLoginAction consumePendingLoginAction(HttpServletRequest request, PendingLoginAction pendingAction, ShiroClient client) {
+		if (pendingAction == null || client == null || !pendingAction.clientName().equals(client.getName()))
+			return null;
+
+		HttpSession session = request.getSession(false);
+		if (session == null)
+			return pendingAction;
+
+		session.removeAttribute(LOGIN_ACTION_SESSION_ATTRIBUTE);
+		session.removeAttribute(LOGIN_ACTION_CLIENT_SESSION_ATTRIBUTE);
+		session.removeAttribute(LOGIN_ACTION_CONTINUE_SESSION_ATTRIBUTE);
+		return pendingAction;
 	}
 
 	private void logPrincipal(UserProfile cp, Map<String, Object> attributeMap, final String username, ShiroClient shiroClient) {
@@ -1022,7 +1121,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		return authReq;
 	}
 
-	private UserSession authenticate(HttpServletResponse resp, OpenUserSession authRequest) throws AuthenticationException {
+	private Maybe<UserSession> authenticate(OpenUserSession authRequest) throws AuthenticationException {
 		AttributeContexts.push(AttributeContexts.derivePeek().set(Waypoint.class, "platform-login").build());
 
 		try {
@@ -1030,13 +1129,11 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 			Maybe<? extends OpenUserSessionResponse> responseMaybe = responseContext.getReasoned();
 			if (responseMaybe.isSatisfied())
-				return responseMaybe.get().getUserSession();
+				return Maybe.complete(responseMaybe.get().getUserSession());
 
 			logger.debug(() -> "Could not authenticate the user: " + responseMaybe.whyUnsatisfied().asString());
 
-			buildResponseMessage(resp, "Invalid authentication!");
-
-			return null;
+			return responseMaybe.whyUnsatisfied().asMaybe();
 
 		} catch (Exception e) {
 			throw new AuthenticationException("Error while trying to evaluate the authentication request: " + authRequest, e);
@@ -1045,9 +1142,54 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		}
 	}
 
+	private void redirectToLogin(HttpServletResponse response, ShiroClient client, String continuePath, Reason reason) throws IOException {
+		LoginIntervention intervention = loginFlow.describe(reason);
+		if (intervention != null)
+			redirectToLogin(response, client, continuePath, intervention);
+		else
+			buildResponseMessage(response, "Invalid authentication!", continuePath);
+	}
+
+	private void redirectToLogin(HttpServletResponse response, ShiroClient client, String continuePath, LoginIntervention intervention)
+			throws IOException {
+		Map<String, String> parameters = new LinkedHashMap<>();
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_STATE, intervention.state().name());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_TITLE, intervention.title());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_MESSAGE, intervention.message());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_ACTION, intervention.actionId());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_ACTION_LABEL, intervention.actionLabel());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_OPTION, client == null ? null : client.getName());
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
+		response.sendRedirect(loginUrl(parameters));
+	}
+
 	private void buildResponseMessage(HttpServletResponse resp, String message) throws IOException, UnsupportedEncodingException {
-		String redirectUrl = publicServicesUrl + "/" + pathIdentifier + "?message=" + URLEncoder.encode(message, "UTF-8");
-		resp.sendRedirect(redirectUrl);
+		buildResponseMessage(resp, message, null);
+	}
+
+	private void buildResponseMessage(HttpServletResponse response, String message, String continuePath) throws IOException {
+		Map<String, String> parameters = new LinkedHashMap<>();
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_MESSAGE, message);
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_MESSAGESTATUS, WebSecurityConstants.REQUEST_VALUE_MESSAGESTATUS_ERROR);
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
+		response.sendRedirect(loginUrl(parameters));
+	}
+
+	protected String loginUrl(Map<String, String> parameters) {
+		String loginPath = StringTools.isBlank(defaultLoginPath) ? pathIdentifier : defaultLoginPath;
+		StringBuilder result = new StringBuilder(publicServicesUrl).append('/').append(loginPath);
+		String separator = "?";
+		for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+			if (parameter.getValue() == null)
+				continue;
+			result.append(separator).append(parameter.getKey()).append('=').append(urlEncode(parameter.getValue()));
+			separator = "&";
+		}
+		return result.toString();
+	}
+
+	private static String urlEncode(String value) {
+		return URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
 	}
 
 	/**
@@ -1249,6 +1391,8 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	@Required     public void setStaticImagesRelativePath(String staticImagesRelativePath) { this.staticImagesRelativePath = staticImagesRelativePath; }
 	@Required     public void setSystemAttributeContextSupplier(Supplier<AttributeContext> satc) { this.systemAttributeContextSupplier = satc; }
 	@Required     public void setEntryPointProvider(Function<HttpServletRequest, String> entryPointProvider) { this.entryPointProvider = entryPointProvider; }
+	@Required     public void setLoginFlow(LoginFlow loginFlow) { this.loginFlow = loginFlow; }
+	@Required     public void setDefaultLoginPath(String defaultLoginPath) { this.defaultLoginPath = defaultLoginPath; }
 	@Configurable public void setAddSessionParameter(boolean addSessionParameter) { this.addSessionUrlParameter = addSessionParameter; }
 	@Configurable public void setConfiguration(ShiroAuthenticationConfiguration configuration) { this.configuration = configuration; }
 	@Configurable public void setCreateUsers(boolean createUsers) { this.createUsers = createUsers; }

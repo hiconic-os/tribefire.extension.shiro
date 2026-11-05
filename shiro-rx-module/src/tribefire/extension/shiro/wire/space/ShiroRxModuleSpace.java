@@ -104,9 +104,10 @@ public class ShiroRxModuleSpace implements RxModuleContract {
 
 			String clientPath = client.getName().toLowerCase(Locale.ROOT);
 			String targetPath = login.getPathIdentifier() + "/auth/" + clientPath;
+			String actionTargetPath = login.getPathIdentifier() + "/action/" + clientPath;
 			String imageName = client instanceof ShiroAzureAdClient ? "azuread" : clientPath;
 			String iconPath = ShiroRxConstants.LOGIN_IMAGES + "/" + imageName + ".png";
-			webSecurity.registerLoginOption(new LoginOption(client.getName(), client.getName(), targetPath, iconPath));
+			webSecurity.registerLoginOption(new LoginOption(client.getName(), client.getName(), targetPath, actionTargetPath, iconPath));
 		}
 	}
 
