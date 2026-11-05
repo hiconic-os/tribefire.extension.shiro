@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -127,6 +128,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 	private UserService userService;
 	private Supplier<AttributeContext> systemAttributeContextSupplier;
+	private Function<HttpServletRequest, String> entryPointProvider = request -> null;
 
 	private ShiroAuthenticationConfiguration configuration;
 
@@ -1002,6 +1004,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 		OpenUserSession authReq = OpenUserSession.T.create();
 		authReq.setCredentials(credentials);
+		authReq.setEntryPoint(entryPointProvider.apply(request));
 
 		RemoteClientAddressResolver resolver = getRemoteAddressResolver();
 		try {
@@ -1245,6 +1248,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	@Required     public void setShiroTools(ShiroTools shiroTools) { this.shiroTools = shiroTools; }
 	@Required     public void setStaticImagesRelativePath(String staticImagesRelativePath) { this.staticImagesRelativePath = staticImagesRelativePath; }
 	@Required     public void setSystemAttributeContextSupplier(Supplier<AttributeContext> satc) { this.systemAttributeContextSupplier = satc; }
+	@Required     public void setEntryPointProvider(Function<HttpServletRequest, String> entryPointProvider) { this.entryPointProvider = entryPointProvider; }
 	@Configurable public void setAddSessionParameter(boolean addSessionParameter) { this.addSessionUrlParameter = addSessionParameter; }
 	@Configurable public void setConfiguration(ShiroAuthenticationConfiguration configuration) { this.configuration = configuration; }
 	@Configurable public void setCreateUsers(boolean createUsers) { this.createUsers = createUsers; }

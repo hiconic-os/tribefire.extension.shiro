@@ -109,6 +109,7 @@ public class RxShiroDeployablesSpace implements WireSpace {
 		bean.setPublicServicesUrl(context.getPublicServicesUrl());
 		bean.setApplicationName(platform.application().applicationName());
 		bean.setCookieHandler(webSecurity.cookieHandler());
+		bean.setEntryPointProvider(webSecurity::openUserSessionEntryPointName);
 		bean.setRemoteAddressResolver(webServer.remoteAddressResolver());
 		bean.setSystemAttributeContextSupplier(platform.auth().systemAttributeContextSupplier());
 		bean.setUserService(security.userService());
