@@ -2,33 +2,75 @@ package tribefire.extension.shiro.processing.login;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.Test;
 
 import com.braintribe.common.attribute.AttributeContext;
-import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
-import com.braintribe.model.shiro.deployment.client.ShiroAzureAdClient;
-import com.braintribe.model.processing.service.common.context.UserSessionAspect;
+import com.braintribe.gm.model.reason.Maybe;
+import com.braintribe.gm.model.reason.Reason;
 import com.braintribe.model.processing.securityservice.api.attributes.OpenUserSessionEntryPointAttribute;
+import com.braintribe.model.processing.service.common.context.UserSessionAspect;
 import com.braintribe.model.security.service.config.OpenUserSessionEntryPoint;
 import com.braintribe.model.securityservice.OpenUserSession;
+import com.braintribe.model.securityservice.credentials.Credentials;
 import com.braintribe.model.securityservice.credentials.GrantedCredentials;
+import com.braintribe.model.shiro.deployment.ShiroAuthenticationConfiguration;
+import com.braintribe.model.shiro.deployment.client.ShiroAzureAdClient;
 import com.braintribe.model.usersession.UserSession;
 import com.braintribe.utils.collection.impl.AttributeContexts;
 
+import hiconic.rx.security.web.api.LoginFlow;
+import hiconic.rx.security.web.api.LoginIntervention;
 import hiconic.rx.security.web.api.WebSecurityConstants;
-
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class ShiroLoginServletTest {
+	@Test
+	public void startsExternalActionWithSignedCookieAndWithoutServletSession() throws Exception {
+		TestShiroLoginServlet servlet = new TestShiroLoginServlet();
+		servlet.setPublicServicesUrl("https://example.test/services");
+		servlet.setPathIdentifier("component/remote-login");
+		servlet.setLoginFlow(new LoginFlow() {
+			@Override public LoginIntervention describe(Reason reason) { return null; }
+			@Override public Maybe<LoginIntervention> performAction(String actionId, Credentials credentials, String entryPoint) {
+				throw new AssertionError("Action must not run before the external authentication callback");
+			}
+		});
+		ShiroAzureAdClient client = ShiroAzureAdClient.T.create();
+		client.setName("EntraID");
+		client.setSecret("shared-client-secret");
+		client.setActive(true);
+		ShiroAuthenticationConfiguration configuration = ShiroAuthenticationConfiguration.T.create();
+		configuration.getClients().add(client);
+		servlet.setConfiguration(configuration);
+
+		List<String> cookieHeaders = new ArrayList<>();
+		List<String> redirects = new ArrayList<>();
+		HttpServletRequest request = actionRequest(Map.of(
+				WebSecurityConstants.REQUEST_PARAM_LOGIN_ACTION, "request-device-browser-approval",
+				WebSecurityConstants.REQUEST_PARAM_CONTINUE, "https://example.test/app"));
+		HttpServletResponse response = response(cookieHeaders, redirects);
+
+		servlet.service(request, response);
+
+		assertThat(redirects).containsExactly(
+				"https://example.test/services/component/remote-login/auth/entraid?continue=https%3A%2F%2Fexample.test%2Fapp");
+		assertThat(cookieHeaders).singleElement().satisfies(header -> {
+			assertThat(header).startsWith("HICONIC_LOGIN_ACTION=");
+			assertThat(header).contains("Path=/services/component/remote-login", "Max-Age=300", "HttpOnly", "SameSite=Lax", "Secure");
+		});
+	}
 
 	@Test
 	public void anchorsResolvedEntryPointInTrustedContext() {
@@ -159,6 +201,11 @@ public class ShiroLoginServletTest {
 	}
 
 	private static class TestShiroLoginServlet extends ShiroLoginServlet {
+		@Override
+		protected void service(HttpServletRequest request, HttpServletResponse response) throws jakarta.servlet.ServletException, java.io.IOException {
+			super.service(request, response);
+		}
+
 		VelocityContext context(HttpServletRequest request) {
 			return createContext(request, null);
 		}
@@ -198,5 +245,34 @@ public class ShiroLoginServletTest {
 						return '\0';
 					return 0;
 				});
+	}
+
+	private static HttpServletRequest actionRequest(Map<String, String> parameters) {
+		return (HttpServletRequest) Proxy.newProxyInstance(HttpServletRequest.class.getClassLoader(),
+				new Class<?>[] { HttpServletRequest.class }, (proxy, method, args) -> switch (method.getName()) {
+					case "getPathInfo" -> "/action/entraid";
+					case "getParameter" -> parameters.get(args[0]);
+					case "isSecure" -> true;
+					case "getSession" -> throw new AssertionError("Login action correlation must not use HttpSession");
+					default -> defaultValue(method.getReturnType());
+				});
+	}
+
+	private static HttpServletResponse response(List<String> cookieHeaders, List<String> redirects) {
+		return (HttpServletResponse) Proxy.newProxyInstance(HttpServletResponse.class.getClassLoader(),
+				new Class<?>[] { HttpServletResponse.class }, (proxy, method, args) -> {
+					if (method.getName().equals("addHeader") && "Set-Cookie".equals(args[0]))
+						cookieHeaders.add((String) args[1]);
+					else if (method.getName().equals("sendRedirect"))
+						redirects.add((String) args[0]);
+					return defaultValue(method.getReturnType());
+				});
+	}
+
+	private static Object defaultValue(Class<?> type) {
+		if (!type.isPrimitive()) return null;
+		if (type == boolean.class) return false;
+		if (type == char.class) return '\0';
+		return 0;
 	}
 }
