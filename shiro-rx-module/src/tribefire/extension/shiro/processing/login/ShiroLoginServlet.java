@@ -66,6 +66,7 @@ import com.braintribe.model.generic.eval.Evaluator;
 import com.braintribe.model.generic.i18n.LocalizedString;
 import com.braintribe.model.generic.reflection.Property;
 import com.braintribe.model.processing.securityservice.api.exceptions.AuthenticationException;
+import com.braintribe.model.processing.securityservice.api.attributes.OpenUserSessionEntryPointAttribute;
 import com.braintribe.model.processing.service.api.aspect.RequestedEndpointAspect;
 import com.braintribe.model.processing.service.api.aspect.RequestorAddressAspect;
 import com.braintribe.model.processing.service.common.context.UserSessionAspect;
@@ -76,6 +77,7 @@ import com.braintribe.model.securityservice.OpenUserSessionResponse;
 import com.braintribe.model.securityservice.credentials.ExistingSessionCredentials;
 import com.braintribe.model.securityservice.credentials.GrantedCredentials;
 import com.braintribe.model.securityservice.credentials.identification.UserNameIdentification;
+import com.braintribe.model.security.service.config.OpenUserSessionEntryPoint;
 import com.braintribe.model.service.api.ServiceRequest;
 import com.braintribe.model.shiro.deployment.FieldEncoding;
 import com.braintribe.model.shiro.deployment.HasRolesField;
@@ -134,7 +136,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 	private UserService userService;
 	private Supplier<AttributeContext> systemAttributeContextSupplier;
-	private Function<HttpServletRequest, String> entryPointProvider = request -> null;
+	private Function<HttpServletRequest, OpenUserSessionEntryPoint> entryPointProvider = request -> null;
 	private LoginFlow loginFlow;
 	private String defaultLoginPath;
 	private static final String LOGIN_ACTION_SESSION_ATTRIBUTE = ShiroLoginServlet.class.getName() + ".loginAction";
@@ -250,7 +252,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 									PendingLoginAction pendingAction = consumePendingLoginAction(req, queuedLoginAction, shiroClient);
 									if (pendingAction != null) {
 										Maybe<LoginIntervention> actionResult = loginFlow.performAction(pendingAction.actionId(),
-												authRequest.getCredentials(), authRequest.getEntryPoint());
+												authRequest.getCredentials(), currentEntryPointName());
 										if (actionResult.isUnsatisfied()) {
 											deleteShiroSessionCookies(req, resp);
 											redirectToLogin(resp, shiroClient, pendingAction.continuePath(), (Reason) actionResult.whyUnsatisfied());
@@ -1039,10 +1041,18 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 	protected void initializeContext(HttpServletRequest httpRequest) {
 		AttributeContext currentContext = AttributeContexts.peek();
-		AttributeContext derivedContext = currentContext.derive().set(RequestedEndpointAspect.class, httpRequest.getRequestURL().toString())
-				.set(RequestorAddressAspect.class, getClientRemoteInternetAddress(httpRequest)).build();
+		var contextBuilder = currentContext.derive().set(RequestedEndpointAspect.class, httpRequest.getRequestURL().toString())
+				.set(RequestorAddressAspect.class, getClientRemoteInternetAddress(httpRequest));
+		OpenUserSessionEntryPoint entryPoint = resolveEntryPoint(httpRequest);
+		if (entryPoint != null)
+			contextBuilder.set(OpenUserSessionEntryPointAttribute.class, entryPoint);
+		AttributeContext derivedContext = contextBuilder.build();
 
 		AttributeContexts.push(derivedContext);
+	}
+
+	protected OpenUserSessionEntryPoint resolveEntryPoint(HttpServletRequest request) {
+		return entryPointProvider.apply(request);
 	}
 
 	protected void popContext() {
@@ -1103,7 +1113,6 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 		OpenUserSession authReq = OpenUserSession.T.create();
 		authReq.setCredentials(credentials);
-		authReq.setEntryPoint(entryPointProvider.apply(request));
 
 		RemoteClientAddressResolver resolver = getRemoteAddressResolver();
 		try {
@@ -1119,6 +1128,11 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		}
 
 		return authReq;
+	}
+
+	private String currentEntryPointName() {
+		OpenUserSessionEntryPoint entryPoint = AttributeContexts.peek().findOrNull(OpenUserSessionEntryPointAttribute.class);
+		return entryPoint == null ? null : entryPoint.getName();
 	}
 
 	private Maybe<UserSession> authenticate(OpenUserSession authRequest) throws AuthenticationException {
@@ -1147,7 +1161,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		if (intervention != null)
 			redirectToLogin(response, client, continuePath, intervention);
 		else
-			buildResponseMessage(response, "Invalid authentication!", continuePath);
+			buildResponseMessage(response, reason.asString(), continuePath);
 	}
 
 	private void redirectToLogin(HttpServletResponse response, ShiroClient client, String continuePath, LoginIntervention intervention)
@@ -1390,7 +1404,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	@Required     public void setShiroTools(ShiroTools shiroTools) { this.shiroTools = shiroTools; }
 	@Required     public void setStaticImagesRelativePath(String staticImagesRelativePath) { this.staticImagesRelativePath = staticImagesRelativePath; }
 	@Required     public void setSystemAttributeContextSupplier(Supplier<AttributeContext> satc) { this.systemAttributeContextSupplier = satc; }
-	@Required     public void setEntryPointProvider(Function<HttpServletRequest, String> entryPointProvider) { this.entryPointProvider = entryPointProvider; }
+	@Required     public void setEntryPointProvider(Function<HttpServletRequest, OpenUserSessionEntryPoint> entryPointProvider) { this.entryPointProvider = entryPointProvider; }
 	@Required     public void setLoginFlow(LoginFlow loginFlow) { this.loginFlow = loginFlow; }
 	@Required     public void setDefaultLoginPath(String defaultLoginPath) { this.defaultLoginPath = defaultLoginPath; }
 	@Configurable public void setAddSessionParameter(boolean addSessionParameter) { this.addSessionUrlParameter = addSessionParameter; }
