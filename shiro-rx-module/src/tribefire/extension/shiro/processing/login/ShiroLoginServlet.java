@@ -1161,7 +1161,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		if (intervention != null)
 			redirectToLogin(response, client, continuePath, intervention);
 		else
-			buildResponseMessage(response, reason.asString(), continuePath);
+			buildResponseMessage(response, client, reason.asString(), continuePath);
 	}
 
 	private void redirectToLogin(HttpServletResponse response, ShiroClient client, String continuePath, LoginIntervention intervention)
@@ -1174,24 +1174,33 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_ACTION_LABEL, intervention.actionLabel());
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_OPTION, client == null ? null : client.getName());
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
-		response.sendRedirect(loginUrl(parameters));
+		response.sendRedirect(loginUrl(client, parameters));
 	}
 
-	private void buildResponseMessage(HttpServletResponse resp, String message) throws IOException, UnsupportedEncodingException {
-		buildResponseMessage(resp, message, null);
-	}
-
-	private void buildResponseMessage(HttpServletResponse response, String message, String continuePath) throws IOException {
+	private void buildResponseMessage(HttpServletResponse response, ShiroClient client, String message, String continuePath) throws IOException {
 		Map<String, String> parameters = new LinkedHashMap<>();
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_MESSAGE, message);
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_MESSAGESTATUS, WebSecurityConstants.REQUEST_VALUE_MESSAGESTATUS_ERROR);
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_OPTION, client == null ? null : client.getName());
 		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
-		response.sendRedirect(loginUrl(parameters));
+		response.sendRedirect(loginUrl(client, parameters));
+	}
+
+	protected String loginUrl(ShiroClient client, Map<String, String> parameters) {
+		return client == null ? loginUrl(parameters) : servletUrl(parameters);
+	}
+
+	protected String servletUrl(Map<String, String> parameters) {
+		return url(publicServicesUrl + "/" + pathIdentifier, parameters);
 	}
 
 	protected String loginUrl(Map<String, String> parameters) {
 		String loginPath = StringTools.isBlank(defaultLoginPath) ? pathIdentifier : defaultLoginPath;
-		StringBuilder result = new StringBuilder(publicServicesUrl).append('/').append(loginPath);
+		return url(publicServicesUrl + "/" + loginPath, parameters);
+	}
+
+	private static String url(String path, Map<String, String> parameters) {
+		StringBuilder result = new StringBuilder(path);
 		String separator = "?";
 		for (Map.Entry<String, String> parameter : parameters.entrySet()) {
 			if (parameter.getValue() == null)
@@ -1221,6 +1230,12 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 				logger.info("The continue parameter " + continueParameter + " could not be URL-encoded.", e);
 			}
 		}
+
+		String interventionState = request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_STATE);
+		String interventionClientName = request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_OPTION);
+		ShiroClient interventionClient = activeClient(interventionClientName);
+		boolean externalIntervention = interventionClient != null
+				&& (interventionState != null || request.getParameter(WebSecurityConstants.REQUEST_PARAM_MESSAGE) != null);
 
 		Map<String, String> authUrls = new LinkedHashMap<>();
 		Map<String, String> authImageUrls = new LinkedHashMap<>();
@@ -1267,8 +1282,18 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		context.put("authUrls", authUrls);
 		context.put("authImageUrls", authImageUrls);
 		context.put("authEmbeddedImages", authEmbeddedImages);
-		context.put("showStandardLoginForm", showStandardLoginForm);
+		context.put("showStandardLoginForm", showStandardLoginForm && !externalIntervention);
 		context.put("showTextLinks", showTextLinks);
+		context.put("externalIntervention", externalIntervention);
+		context.put("interventionState", interventionState);
+		context.put("interventionTitle", request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_TITLE));
+		context.put("interventionMessage", request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_MESSAGE));
+		context.put("interventionActionLabel", request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_INTERVENTION_ACTION_LABEL));
+		context.put("interventionActionUrl", externalIntervention
+				? actionUrl(interventionClient, request.getParameter(WebSecurityConstants.REQUEST_PARAM_LOGIN_ACTION), continueParameter)
+				: null);
+		context.put("externalRetryLabel", interventionClient == null ? null : "Sign in with " + interventionClient.getName() + " again");
+		context.put("externalRetryUrl", externalIntervention ? authenticationUrl(interventionClient, continueParameter) : null);
 
 		if (offerStaySigned) {
 			context.put("offerStaySigned", Boolean.TRUE);
@@ -1279,6 +1304,30 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		context.put("publicServicesUrl", publicServicesUrl);
 
 		return context;
+	}
+
+	private ShiroClient activeClient(String name) {
+		if (StringTools.isBlank(name))
+			return null;
+		return configuration.getClients().stream()
+				.filter(client -> Boolean.TRUE.equals(client.getActive()))
+				.filter(client -> client.getName().equals(name))
+				.findFirst().orElse(null);
+	}
+
+	private String actionUrl(ShiroClient client, String actionId, String continuePath) {
+		if (client == null || StringTools.isBlank(actionId))
+			return null;
+		Map<String, String> parameters = new LinkedHashMap<>();
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_LOGIN_ACTION, actionId);
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
+		return url(publicServicesUrl + "/" + pathIdentifier + "/action/" + client.getName().toLowerCase(Locale.ROOT), parameters);
+	}
+
+	private String authenticationUrl(ShiroClient client, String continuePath) {
+		Map<String, String> parameters = new LinkedHashMap<>();
+		parameters.put(WebSecurityConstants.REQUEST_PARAM_CONTINUE, continuePath);
+		return url(publicServicesUrl + "/" + pathIdentifier + "/auth/" + client.getName().toLowerCase(Locale.ROOT), parameters);
 	}
 
 	/**

@@ -143,6 +143,12 @@ form.loginForm {
 .loginMessage span {
 	white-space: pre-line;
 }
+.loginMessageAction, *.loginContent a.loginRetryOption {
+	margin-top: 14px;
+}
+*.loginContent a.loginRetryOption {
+	background: transparent;
+}
 .loginOptionRow { margin-top: 12px; }
 *.loginContent a.loginOption {
 	display: flex;
@@ -253,6 +259,12 @@ function bindForm() {
 	document.querySelectorAll("a.loginOption").forEach(function (option) {
 		option.addEventListener("click", function () { setBusy(true, "Continuing to sign in…"); });
 	});
+	var action = document.getElementById("loginAction");
+	if (action) {
+		action.addEventListener("click", function () {
+			setBusy(true, "Requesting approval…");
+		});
+	}
 }
 
 function login() {
@@ -348,8 +360,8 @@ function setBusy(busy, label) {
 
   <div class="loginContent">
 	<div class="loginPanel">
-		<h2>Sign in to ${applicationName}</h2>
-		<p class="loginSubtitle">Choose a sign-in method to continue.</p>
+		<h2>#if($externalIntervention)Device/browser approval#else Sign in to ${applicationName}#end</h2>
+		<p class="loginSubtitle">#if($externalIntervention)Complete this step before signing in.#else Choose a sign-in method to continue.#end</p>
 		<form id="signinForm" action="${publicServicesUrl}/login/auth" class="loginForm" accept-charset="UTF-8">
 			<div id="loginBusyMask" class="loginBusyMask" aria-hidden="true">
 				<div class="loginBusyIndicator" role="status" aria-live="polite">
@@ -357,7 +369,19 @@ function setBusy(busy, label) {
 					<span id="loginBusyLabel">Signing in&hellip;</span>
 				</div>
 			</div>
-	#if(${showStandardLoginForm})
+	#if($externalIntervention)
+			<div id="loginMessage" role="status" aria-live="polite"
+				class="loginMessage#if($messageStatus == 'OK' || $interventionState == 'PENDING') loginMessageOk#end">
+				<strong id="loginMessageTitle">#if($interventionTitle)$tools.escape($interventionTitle)#elseif($message)Sign in failed#else Approval status#end</strong>
+				<span id="loginMessageText">#if($interventionMessage)$tools.escape($interventionMessage)#elseif($message)$tools.escape($message)#end</span>
+				#if($interventionActionUrl && $interventionActionLabel)
+					<a id="loginAction" class="loginOption loginMessageAction"
+						href="$tools.escape($interventionActionUrl)">$tools.escape($interventionActionLabel)</a>
+				#elseif($externalRetryUrl)
+					<a class="loginOption loginRetryOption" href="$tools.escape($externalRetryUrl)">$tools.escape($externalRetryLabel)</a>
+				#end
+			</div>
+	#elseif(${showStandardLoginForm})
 			<div class="loginField">
 				<input id="input_user" type="text" name="user" placeholder="Username" autofocus>
 			</div>
@@ -385,10 +409,10 @@ function setBusy(busy, label) {
 				<span id="loginMessageText">#if($message)$tools.escape($message)#end</span>
 			</div>
 	
-	#if(${showTextLinks})
+	#if(!$externalIntervention && ${showTextLinks})
 		#if(${showStandardLoginForm})<div class="loginDivider"><span>or</span></div>#end
 		#foreach($authUrlEntry in $authUrls.entrySet())<div class="loginOptionRow"><a class="loginOption" href="${authUrlEntry.value}">Sign in with ${authUrlEntry.key}</a></div>#end
-	#else
+	#elseif(!$externalIntervention)
 		#if(${showStandardLoginForm})<div class="loginDivider"><span>or</span></div>#end
 		#foreach($authUrlEntry in $authUrls.entrySet())
 			<div class="loginOptionRow"><a class="loginOption" href="${authUrlEntry.value}">
