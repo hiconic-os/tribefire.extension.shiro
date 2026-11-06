@@ -402,12 +402,14 @@ function setBusy(busy, label) {
 			#end
 	#end
 
+	#if(!$externalIntervention)
 			<div id="loginMessage" role="alert" aria-live="polite"
 				class="loginMessage#if($messageStatus == 'OK') loginMessageOk#end" #if(!$message)hidden#end>
 				<strong id="loginMessageTitle">#if($messageStatus == "OK")Information#else
 					Sign in failed#end</strong>
 				<span id="loginMessageText">#if($message)$tools.escape($message)#end</span>
 			</div>
+	#end
 	
 	#if(!$externalIntervention && ${showTextLinks})
 		#if(${showStandardLoginForm})<div class="loginDivider"><span>or</span></div>#end

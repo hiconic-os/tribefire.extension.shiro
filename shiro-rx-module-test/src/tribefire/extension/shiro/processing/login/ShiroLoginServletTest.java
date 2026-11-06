@@ -117,11 +117,44 @@ public class ShiroLoginServletTest {
 
 	@Test
 	public void loginTemplateParses() throws Exception {
+		assertThat(renderTemplate(new VelocityContext())).isNotNull();
+	}
+
+	@Test
+	public void externalErrorsRenderOnlyOnce() throws Exception {
+		VelocityContext context = new VelocityContext();
+		context.put("externalIntervention", true);
+		context.put("message", "unique-account-locked-reason");
+		context.put("messageStatus", "ERROR");
+		context.put("externalRetryUrl", "https://example.test/retry");
+		context.put("externalRetryLabel", "Sign in again");
+		context.put("authUrls", Map.of());
+		context.put("authImageUrls", Map.of());
+		context.put("authEmbeddedImages", Map.of());
+		context.put("showStandardLoginForm", false);
+		context.put("showTextLinks", false);
+		context.put("offerStaySigned", false);
+		context.put("applicationName", "Test");
+		context.put("publicServicesUrl", "https://example.test/services");
+		context.put("tools", new HtmlTools());
+
+		assertThat(renderTemplate(context)).containsOnlyOnce("unique-account-locked-reason");
+	}
+
+	private static String renderTemplate(VelocityContext context) throws Exception {
 		String resource = "/tribefire/extension/shiro/processing/login/login.html.vm";
 		try (InputStream in = ShiroLoginServlet.class.getResourceAsStream(resource)) {
 			assertThat(in).as("login template resource").isNotNull();
 			String template = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-			assertThat(new VelocityEngine().evaluate(new VelocityContext(), new StringWriter(), resource, template)).isTrue();
+			StringWriter output = new StringWriter();
+			assertThat(new VelocityEngine().evaluate(context, output, resource, template)).isTrue();
+			return output.toString();
+		}
+	}
+
+	public static class HtmlTools {
+		public String escape(String value) {
+			return value;
 		}
 	}
 
