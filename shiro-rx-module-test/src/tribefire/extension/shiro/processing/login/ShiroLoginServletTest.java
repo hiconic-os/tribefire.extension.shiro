@@ -16,6 +16,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.junit.Test;
 
 import com.braintribe.common.attribute.AttributeContext;
+import com.braintribe.common.attribute.TypeSafeAttribute;
 import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.gm.model.reason.Reason;
 import com.braintribe.model.processing.securityservice.api.attributes.OpenUserSessionEntryPointAttribute;
@@ -36,6 +37,35 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class ShiroLoginServletTest {
+	private interface TestBrowserAttribute extends TypeSafeAttribute<String> { }
+
+	@Test
+	public void contributesHttpContextBeforeExternalLoginContinues() {
+		TestShiroLoginServlet servlet = new TestShiroLoginServlet();
+		List<String> cookieHeaders = new ArrayList<>();
+		HttpServletRequest request = (HttpServletRequest) Proxy.newProxyInstance(HttpServletRequest.class.getClassLoader(),
+				new Class<?>[] { HttpServletRequest.class }, (proxy, method, args) -> switch (method.getName()) {
+					case "getRequestURL" -> new StringBuffer("https://example.test/services/component/remote-login/auth/callback/EntraID");
+					case "getRemoteAddr" -> "192.0.2.10";
+					default -> defaultValue(method.getReturnType());
+				});
+		HttpServletResponse response = response(cookieHeaders, new ArrayList<>());
+		servlet.setRequestContextContributor((actualRequest, actualResponse, builder) -> {
+			assertThat(actualRequest).isSameAs(request);
+			assertThat(actualResponse).isSameAs(response);
+			builder.set(TestBrowserAttribute.class, "browser-token");
+			actualResponse.addHeader("Set-Cookie", "browser-context=browser-token; Path=/");
+		});
+
+		servlet.initializeContext(request, response);
+		try {
+			assertThat(AttributeContexts.peek().findOrNull(TestBrowserAttribute.class)).isEqualTo("browser-token");
+			assertThat(cookieHeaders).containsExactly("browser-context=browser-token; Path=/");
+		} finally {
+			servlet.popContext();
+		}
+	}
+
 	@Test
 	public void startsExternalActionWithSignedCookieAndWithoutServletSession() throws Exception {
 		TestShiroLoginServlet servlet = new TestShiroLoginServlet();

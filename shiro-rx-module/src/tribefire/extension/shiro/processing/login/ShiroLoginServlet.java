@@ -108,6 +108,7 @@ import hiconic.rx.security.web.api.LoginFlow;
 import hiconic.rx.security.web.api.LoginIntervention;
 import hiconic.rx.security.web.api.LoginInterventionState;
 import hiconic.rx.security.web.api.WebSecurityConstants;
+import hiconic.rx.security.web.api.WebSecurityRequestContextContributor;
 import hiconic.rx.servlet.velocity.BasicTemplateBasedServlet;
 import io.buji.pac4j.subject.Pac4jPrincipal;
 import io.jsonwebtoken.Claims;
@@ -142,6 +143,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	private UserService userService;
 	private Supplier<AttributeContext> systemAttributeContextSupplier;
 	private Function<HttpServletRequest, OpenUserSessionEntryPoint> entryPointProvider = request -> null;
+	private WebSecurityRequestContextContributor requestContextContributor;
 	private LoginFlow loginFlow;
 	private String defaultLoginPath;
 	private static final String LOGIN_ACTION_COOKIE = "HICONIC_LOGIN_ACTION";
@@ -246,7 +248,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 
 							logger.debug(() -> "Authenticating user: " + username);
 
-							initializeContext(req);
+							initializeContext(req, resp);
 							try {
 								OpenUserSession authRequest = createOpenUserSessionRequest(username, req);
 
@@ -1102,13 +1104,14 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 		return urlParamCodec;
 	}
 
-	protected void initializeContext(HttpServletRequest httpRequest) {
+	protected void initializeContext(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
 		AttributeContext currentContext = AttributeContexts.peek();
 		var contextBuilder = currentContext.derive().set(RequestedEndpointAspect.class, httpRequest.getRequestURL().toString())
 				.set(RequestorAddressAspect.class, getClientRemoteInternetAddress(httpRequest));
 		OpenUserSessionEntryPoint entryPoint = resolveEntryPoint(httpRequest);
 		if (entryPoint != null)
 			contextBuilder.set(OpenUserSessionEntryPointAttribute.class, entryPoint);
+		requestContextContributor.contribute(httpRequest, httpResponse, contextBuilder);
 		AttributeContext derivedContext = contextBuilder.build();
 
 		AttributeContexts.push(derivedContext);
@@ -1524,6 +1527,7 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 	@Required     public void setStaticImagesRelativePath(String staticImagesRelativePath) { this.staticImagesRelativePath = staticImagesRelativePath; }
 	@Required     public void setSystemAttributeContextSupplier(Supplier<AttributeContext> satc) { this.systemAttributeContextSupplier = satc; }
 	@Required     public void setEntryPointProvider(Function<HttpServletRequest, OpenUserSessionEntryPoint> entryPointProvider) { this.entryPointProvider = entryPointProvider; }
+	@Required     public void setRequestContextContributor(WebSecurityRequestContextContributor requestContextContributor) { this.requestContextContributor = requestContextContributor; }
 	@Required     public void setLoginFlow(LoginFlow loginFlow) { this.loginFlow = loginFlow; }
 	@Required     public void setDefaultLoginPath(String defaultLoginPath) { this.defaultLoginPath = defaultLoginPath; }
 	@Configurable public void setAddSessionParameter(boolean addSessionParameter) { this.addSessionUrlParameter = addSessionParameter; }
