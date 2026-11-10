@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -237,7 +238,14 @@ public class ShiroLoginServlet extends BasicTemplateBasedServlet {
 						Map<String, Object> attributeMap = getAttributeMap(cp);
 
 						ShiroClient shiroClient = getShiroClient(cp);
-						String username = shiroClient != null ? getUsername(shiroClient, attributeMap) : null;
+						String attributeUsername = shiroClient != null ? getUsername(shiroClient, attributeMap) : null;
+						final String username;
+						if (StringTools.isBlank(attributeUsername)) {
+							logger.debug(() -> "Could not determine the username from " + attributeMap);
+							username = UUID.randomUUID().toString();
+						} else {
+							username = attributeUsername;
+						}
 
 						logPrincipal(cp, attributeMap, username, shiroClient);
 
